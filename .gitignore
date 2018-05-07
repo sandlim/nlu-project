@@ -1,3 +1,12 @@
+runs/
+data/*
+!data/download.sh
+vocab/*
+results/*
+!vocab/.gitkeep
+**/*.swp
+.idea/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
