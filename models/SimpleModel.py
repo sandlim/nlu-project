@@ -1,62 +1,35 @@
 import os, copy
 import tensorflow as tf
+from models.BasicModel import BasicModel
 
-
-class BasicModel(object):
-    def __init__(self, config):
-        # I make a `deepcopy` of the configuration before using it
-        # to avoid any potential mutation when I iterate asynchronously over configurations
-        self.config = copy.deepcopy(config)
-
-        if config['debug']:  # This is a personal check i like to do
-            print('config', self.config)
-
-        self.random_seed = self.config['random_seed']
-
-        # Basic hyper-parameters
-        self.result_dir = self.config['result_dir']
-        self.learning_rate = self.config['learning_rate']
-
-        # Now the child Model needs some custom parameters, to avoid any
-        # inheritance hell with the __init__ function, the model
-        # will override this function completely
-        self.set_model_props()
-
-        # Again, child Model should provide its own build_graph function
-        self.graph = self.build_graph(tf.Graph())
-
-        # Any operations that should be in the graph but are common to all models
-        # can be added this way, here
-        with self.graph.as_default():
-            self.saver = tf.train.Saver(
-                max_to_keep=50,
-            )
-
-        # Add all the other common code for the initialization here
-        gpu_options = tf.GPUOptions(allow_growth=True)
-        sessConfig = tf.ConfigProto(gpu_options=gpu_options)
-        self.sess = tf.Session(config=sessConfig, graph=self.graph)
-        self.sw = tf.summary.FileWriter(self.result_dir, self.sess.graph)
-
-        # This function is not always common to all models, that's why it's again
-        # separated from the __init__ one
-        self.init()
-
-        # At the end of this function, you want your model to be ready!
+class SimpleModel(BasicModel):
 
     def set_model_props(self):
         # This function is here to be overriden completely.
         # When you look at your model, you want to know exactly which custom options it needs.
         pass
 
-    @staticmethod
-    def get_random_config(fixed_params={}):
-        # Why static? Because you want to be able to pass this function to other processes
-        # so they can independently generate random configuration of the current model
-        raise Exception('The get_random_config function must be overriden by the model')
-
     def build_graph(self, graph):
-        raise Exception('The build_graph function must be overriden by the model')
+        train_data = tf.data.TextLineDataset(self.config['train_data_path']).skip(1)
+        val_data = tf.data.TextLineDataset(self.config['val_data_path']).skip(1)
+
+        def _parse_line(line, train=True):
+            if train:
+                COLUMNS = ['sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5']
+            else :
+                COLUMNS = ['sentence1', 'sentence2', 'sentence3', 'sentence4', 'ending1', 'ending2', 'rightEnding']
+            # Decode the line into its fields
+            num_cols = 7 if train else 8
+            fields = tf.decode_csv(line, [None] * num_cols)
+
+            # Pack the result into a dictionary
+            features = dict(zip(COLUMNS, fields[2:]))
+
+            # Separate the label from the features
+            label = features.pop('label')
+
+            return features, label
+
 
     def infer(self):
         raise Exception('The infer function must be overriden by the model')

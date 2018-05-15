@@ -52,15 +52,12 @@ def main(_):
     # fixed_params must be a string to be passed in the shell, let's use JSON
     config["fixed_params"] = json.loads(config["fixed_params"])
 
-    if config['fullsearch']:
-        # Some code for HP search ...
-    else:
-        model = make_model(config)
+    model = make_model(config)
 
-        if config['infer']:
-            # Some code for inference ...
-        else:
-            # Some code for training ...
+    # if config['infer']:
+    #     # Some code for inference ...
+    # else:
+    #     # Some code for training ...
 
 
 if __name__ == '__main__':
