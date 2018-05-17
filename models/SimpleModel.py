@@ -2,6 +2,7 @@ import os, copy
 import tensorflow as tf
 from models.BasicModel import BasicModel
 
+
 class SimpleModel(BasicModel):
 
     def set_model_props(self):
@@ -16,7 +17,7 @@ class SimpleModel(BasicModel):
         def _parse_line(line, train=True):
             if train:
                 COLUMNS = ['sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5']
-            else :
+            else:
                 COLUMNS = ['sentence1', 'sentence2', 'sentence3', 'sentence4', 'ending1', 'ending2', 'rightEnding']
             # Decode the line into its fields
             num_cols = 7 if train else 8
@@ -25,11 +26,10 @@ class SimpleModel(BasicModel):
             # Pack the result into a dictionary
             features = dict(zip(COLUMNS, fields[2:]))
 
-            # Separate the label from the features
-            label = features.pop('label')
+            return features
 
-            return features, label
-
+        train_data.map(_parse_line, train=True)
+        val_data.map(_parse_line, train=False)
 
     def infer(self):
         raise Exception('The infer function must be overriden by the model')

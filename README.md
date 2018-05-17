@@ -3,6 +3,7 @@
 Useful Links
 ---------
 * tf.data API for NLU: https://medium.com/@TalPerry/getting-text-into-tensorflow-with-the-dataset-api-ffb832c8bec6
+* https://cs230-stanford.github.io/
 * old:
 	* Good introduction to LSTMs: http://colah.github.io/posts/2015-08-Understanding-LSTMs/
 	* Folder Structure for Tensorflow projects: https://blog.metaflow.fr/tensorflow-a-proposal-of-good-practices-for-files-folders-and-models-architecture-f23171501ae3

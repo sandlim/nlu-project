@@ -1,10 +1,14 @@
-import os, json
+import os
+import json
+import time
+import random
+import sys
 import tensorflow as tf
 
 # See the __init__ script in the models folder
 # `make_models` is a helper function to load any models you have
-from models import make_models
-from hpsearch import hyperband, randomsearch
+from models import make_model
+# from hpsearch import hyperband, randomsearch
 
 # I personally always like to make my paths absolute
 # to be independent from where the python binary is called
@@ -25,7 +29,7 @@ flags.DEFINE_string('fixed_params', "{}", 'JSON inputs to fix some params in a H
 
 
 # Agent configuration
-flags.DEFINE_string('model_name', 'DQNAgent', 'Unique name of the model')
+flags.DEFINE_string('model_name', 'SimpleModel', 'Unique name of the model')
 flags.DEFINE_boolean('best', False, 'Force to use the best known configuration')
 flags.DEFINE_float('initial_mean', 0., 'Initial mean for NN')
 flags.DEFINE_float('initial_stddev', 1e-2, 'Initial standard deviation for NN')
@@ -52,7 +56,7 @@ def main(_):
     # fixed_params must be a string to be passed in the shell, let's use JSON
     config["fixed_params"] = json.loads(config["fixed_params"])
 
-    model = make_model(config)
+    model = make_model(config, None)
 
     # if config['infer']:
     #     # Some code for inference ...
