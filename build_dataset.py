@@ -80,15 +80,13 @@ if __name__ == "__main__":
     dataset_val = load_dataset(path_dataset_val, is_validation=True)
     print("- done.")
 
-    # Split the dataset into train, dev and split (dummy split with no shuffle)
-    # train_dataset = dataset[:int(0.7*len(dataset))]
+    dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
     train_dataset = dataset
-    dev_dataset = dataset_val
-    # test_dataset = dataset[int(0.85*len(dataset)):]
+    dev_split_dataset = dataset_val_shuffled[:int(0.7*len(dataset_val_shuffled))]
+    val_split_dataset = dataset_val_shuffled[:int(0.3*len(dataset_val_shuffled))]
 
     # Save the datasets to files
     save_dataset(train_dataset, 'data/dev_split/train')
-    save_dataset(dev_dataset, 'data/dev_split/val')
-    # save_dataset(dev_dataset, 'data/kaggle/dev')
-    # save_dataset(test_dataset, 'data/kaggle/test')
+    save_dataset(dev_split_dataset, 'data/dev_split/dev')
+    save_dataset(val_split_dataset, 'data/dev_split/val')
 
