@@ -69,8 +69,8 @@ def tokenize_sentence(sentence):
     return " ".join([word for word in nltk.word_tokenize(sentence)])
 
 
-def tokenize(dataset):
-    dataset.applymap(tokenize_sentence)
+def tokenize(ds):
+    return ds.loc[:, ds.columns != 'label'].applymap(tokenize_sentence)
 
 
 if __name__ == "__main__":
@@ -91,8 +91,10 @@ if __name__ == "__main__":
 
     # Tokenization
     print("Tokenization...")
-    tokenize(dataset)
-    tokenize(dataset_val)
+    dataset_val = tokenize(dataset_val)
+    print("- tokenized validation set.")
+    dataset = tokenize(dataset)
+    print("- tokenized training set.")
     print("- done.")
 
     dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
