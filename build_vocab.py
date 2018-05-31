@@ -5,6 +5,8 @@ from collections import Counter
 import json
 import os
 import sys
+import pandas as pd
+import re
 
 
 parser = argparse.ArgumentParser()
@@ -17,7 +19,6 @@ parser.add_argument('--data_dir', default='data/small', help="Directory containi
 # Hyper parameters for the vocab
 NUM_OOV_BUCKETS = 1 # number of buckets (= number of ids) for unknown words
 PAD_WORD = '<pad>'
-PAD_TAG = 'O'
 
 
 def save_vocab_to_txt_file(vocab, txt_path):
@@ -43,7 +44,7 @@ def save_dict_to_json(d, json_path):
         json.dump(d, f, indent=4)
 
 
-def update_vocab(txt_path, vocab):
+def update_vocab(csv_path, vocab):
     """Update word and tag vocabulary from dataset
 
     Args:
@@ -53,6 +54,7 @@ def update_vocab(txt_path, vocab):
     Returns:
         dataset_size: (int) number of elements in the dataset
     """
+    df = pd.read_csv(csv_path)
     with open(txt_path) as f:
         for i, line in enumerate(f):
             vocab.update(line.strip().split(' '))
@@ -63,13 +65,16 @@ def update_vocab(txt_path, vocab):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    train_data_path = 'train_stories.csv'
+    val_data_path = 'cloze_test_val.csv'
+
 
     # Build word vocab with train and test datasets
     print("Building word vocabulary...")
     words = Counter()
-    size_train_sentences = update_vocab(os.path.join(args.data_dir, 'train/sentences.txt'), words)
-    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/sentences.txt'), words)
-    size_test_sentences = update_vocab(os.path.join(args.data_dir, 'test/sentences.txt'), words)
+    size_train_sentences = update_vocab(os.path.join(args.data_dir, train_data_path), words)
+    size_dev_sentences = update_vocab(os.path.join(args.data_dir, val_data_path), words)
+    # size_test_sentences = update_vocab(os.path.join(args.data_dir, 'test/sentences.txt'), words)
     print("- done.")
 
     # Build tag vocab with train and test datasets
@@ -91,23 +96,21 @@ if __name__ == '__main__':
 
     # Add pad tokens
     if PAD_WORD not in words: words.append(PAD_WORD)
-    if PAD_TAG not in tags: tags.append(PAD_TAG)
 
     # Save vocabularies to file
     print("Saving vocabularies to file...")
     save_vocab_to_txt_file(words, os.path.join(args.data_dir, 'words.txt'))
-    save_vocab_to_txt_file(tags, os.path.join(args.data_dir, 'tags.txt'))
     print("- done.")
 
     # Save datasets properties in json file
     sizes = {
         'train_size': size_train_sentences,
         'dev_size': size_dev_sentences,
-        'test_size': size_test_sentences,
+        # 'test_size': size_test_sentences,
         'vocab_size': len(words) + NUM_OOV_BUCKETS,
         'number_of_tags': len(tags),
         'pad_word': PAD_WORD,
-        'pad_tag': PAD_TAG,
+        # 'pad_tag': PAD_TAG,
         'num_oov_buckets': NUM_OOV_BUCKETS
     }
     save_dict_to_json(sizes, os.path.join(args.data_dir, 'dataset_params.json'))
