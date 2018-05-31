@@ -4,6 +4,7 @@ import csv
 import os
 import sys
 import pandas as pd
+import nltk
 
 
 def load_dataset(path_csv, is_validation=False):
@@ -11,40 +12,38 @@ def load_dataset(path_csv, is_validation=False):
 
     if is_validation:
         val_df = pd.read_csv(path_csv, usecols=['InputSentence1',
-                                            'InputSentence2',
-                                            'InputSentence3',
-                                            'InputSentence4',
-                                            'RandomFifthSentenceQuiz1',
-                                            'RandomFifthSentenceQuiz2',
-                                            'AnswerRightEnding'])
-        df = pd.DataFrame(columns=['sentence1','sentence2',
-                                   'sentence3','sentence4','sentence5',
+                                                'InputSentence2',
+                                                'InputSentence3',
+                                                'InputSentence4',
+                                                'RandomFifthSentenceQuiz1',
+                                                'RandomFifthSentenceQuiz2',
+                                                'AnswerRightEnding'])
+        df = pd.DataFrame(columns=['sentence1', 'sentence2',
+                                   'sentence3', 'sentence4', 'sentence5',
                                    'label'])
         for index, row in val_df.iterrows():
-            correct_ending = row['RandomFifthSentenceQuiz1'] if row['AnswerRightEnding'] == 1 else row['RandomFifthSentenceQuiz2']
-            wrong_ending = row['RandomFifthSentenceQuiz1'] if row['AnswerRightEnding'] == 2 else row['RandomFifthSentenceQuiz2']
-            df.loc[2*index] = [row['InputSentence1'],
-                               row['InputSentence2'],
-                               row['InputSentence3'], 
-                               row['InputSentence4'],
-                               correct_ending,
-                               1]
-            df.loc[2*index + 1] = [row['InputSentence1'],
-                                   row['InputSentence2'],
-                                   row['InputSentence3'], 
-                                   row['InputSentence4'],
-                                   wrong_ending,
-                                   0]
-                               
-
-
+            correct_ending = (row['RandomFifthSentenceQuiz1'] if row['AnswerRightEnding'] == 1
+                              else row['RandomFifthSentenceQuiz2'])
+            wrong_ending = (row['RandomFifthSentenceQuiz1'] if row['AnswerRightEnding'] == 2
+                            else row['RandomFifthSentenceQuiz2'])
+            df.loc[2 * index] = [row['InputSentence1'],
+                                 row['InputSentence2'],
+                                 row['InputSentence3'],
+                                 row['InputSentence4'],
+                                 correct_ending,
+                                 1]
+            df.loc[2 * index + 1] = [row['InputSentence1'],
+                                     row['InputSentence2'],
+                                     row['InputSentence3'],
+                                     row['InputSentence4'],
+                                     wrong_ending,
+                                     0]
 
     else:
-        df = pd.read_csv(path_csv, usecols=['sentence1','sentence2',
-                                            'sentence3','sentence4','sentence5']) 
+        df = pd.read_csv(path_csv, usecols=['sentence1', 'sentence2',
+                                            'sentence3', 'sentence4', 'sentence5'])
         # train endings are all correct
-        df['label'] = 1 
-
+        df['label'] = 1
 
     return df
 
@@ -66,6 +65,14 @@ def save_dataset(dataset, save_dir):
     print("- done.")
 
 
+def tokenize_sentence(sentence):
+    return " ".join([word for word in nltk.word_tokenize(sentence)])
+
+
+def tokenize(dataset):
+    dataset.applymap(tokenize_sentence)
+
+
 if __name__ == "__main__":
     # Check that the dataset exists
     path_dataset = 'data/train_stories.csv'
@@ -75,18 +82,25 @@ if __name__ == "__main__":
     assert os.path.isfile(path_dataset_val), msg
 
     # Load the dataset into memory
-    print("Loading dataset into memory...")
+    print("Loading dataset into memory (and rearranging it)...")
     dataset = load_dataset(path_dataset)
+    print("- loaded training set.")
     dataset_val = load_dataset(path_dataset_val, is_validation=True)
+    print("- loaded (and rearranged) validation set.")
+    print("- done.")
+
+    # Tokenization
+    print("Tokenization...")
+    tokenize(dataset)
+    tokenize(dataset_val)
     print("- done.")
 
     dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
     train_dataset = dataset
-    dev_split_dataset = dataset_val_shuffled[:int(0.7*len(dataset_val_shuffled))]
-    val_split_dataset = dataset_val_shuffled[:int(0.3*len(dataset_val_shuffled))]
+    dev_split_dataset = dataset_val_shuffled[:int(0.7 * len(dataset_val_shuffled))]
+    val_split_dataset = dataset_val_shuffled[:int(0.3 * len(dataset_val_shuffled))]
 
     # Save the datasets to files
     save_dataset(train_dataset, 'data/dev_split/train')
     save_dataset(dev_split_dataset, 'data/dev_split/dev')
     save_dataset(val_split_dataset, 'data/dev_split/val')
-
