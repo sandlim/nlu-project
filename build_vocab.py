@@ -10,11 +10,9 @@ import re
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--min_count_word', default=1, help="Minimum count for words in the dataset",
+parser.add_argument('--min_count_word', default=3, help="Minimum count for words in the dataset",
                     type=int)
-parser.add_argument('--min_count_tag', default=1, help="Minimum count for tags in the dataset",
-                    type=int)
-parser.add_argument('--data_dir', default='data/small', help="Directory containing the dataset")
+parser.add_argument('--data_dir', default='data/dev_split', help="Directory containing the dataset")
 
 # Hyper parameters for the vocab
 NUM_OOV_BUCKETS = 1 # number of buckets (= number of ids) for unknown words
@@ -55,62 +53,44 @@ def update_vocab(csv_path, vocab):
         dataset_size: (int) number of elements in the dataset
     """
     df = pd.read_csv(csv_path)
-    with open(txt_path) as f:
-        for i, line in enumerate(f):
-            vocab.update(line.strip().split(' '))
+    for index, row in df.iterrows():
+        for i in range(5):
+            sentence = row["sentence%d" % (i + 1)]
+            vocab.update(sentence.strip().split(' '))
 
-
-    return i + 1
+    return len(df)
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    train_data_path = 'train_stories.csv'
-    val_data_path = 'cloze_test_val.csv'
-
 
     # Build word vocab with train and test datasets
     print("Building word vocabulary...")
-    words = Counter()
-    size_train_sentences = update_vocab(os.path.join(args.data_dir, train_data_path), words)
-    size_dev_sentences = update_vocab(os.path.join(args.data_dir, val_data_path), words)
-    # size_test_sentences = update_vocab(os.path.join(args.data_dir, 'test/sentences.txt'), words)
+    counter = Counter()
+    size_train_sentences = update_vocab(os.path.join(args.data_dir, 'train/stories.csv'), counter)
+    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories.csv'), counter)
+    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories.csv'), counter)
     print("- done.")
-
-    # Build tag vocab with train and test datasets
-    print("Building tag vocabulary...")
-    tags = Counter()
-    size_train_tags = update_vocab(os.path.join(args.data_dir, 'train/labels.txt'), tags)
-    size_dev_tags = update_vocab(os.path.join(args.data_dir, 'dev/labels.txt'), tags)
-    size_test_tags = update_vocab(os.path.join(args.data_dir, 'test/labels.txt'), tags)
-    print("- done.")
-
-    # Assert same number of examples in datasets
-    assert size_train_sentences == size_train_tags
-    assert size_dev_sentences == size_dev_tags
-    assert size_test_sentences == size_test_tags
 
     # Only keep most frequent tokens
-    words = [tok for tok, count in words.items() if count >= args.min_count_word]
-    tags = [tok for tok, count in tags.items() if count >= args.min_count_tag]
+    vocab = [tok for tok, count in counter.items() if count >= args.min_count_word]
 
     # Add pad tokens
-    if PAD_WORD not in words: words.append(PAD_WORD)
+    if PAD_WORD not in vocab:
+        vocab.append(PAD_WORD)
 
     # Save vocabularies to file
     print("Saving vocabularies to file...")
-    save_vocab_to_txt_file(words, os.path.join(args.data_dir, 'words.txt'))
+    save_vocab_to_txt_file(vocab, os.path.join(args.data_dir, 'vocab.txt'))
     print("- done.")
 
     # Save datasets properties in json file
     sizes = {
         'train_size': size_train_sentences,
         'dev_size': size_dev_sentences,
-        # 'test_size': size_test_sentences,
-        'vocab_size': len(words) + NUM_OOV_BUCKETS,
-        'number_of_tags': len(tags),
+        'val_size': size_val_sentences,
+        'vocab_size': len(vocab) + NUM_OOV_BUCKETS,
         'pad_word': PAD_WORD,
-        # 'pad_tag': PAD_TAG,
         'num_oov_buckets': NUM_OOV_BUCKETS
     }
     save_dict_to_json(sizes, os.path.join(args.data_dir, 'dataset_params.json'))
