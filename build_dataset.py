@@ -61,7 +61,7 @@ def save_dataset(dataset, save_dir):
         os.makedirs(save_dir)
 
     # Export the dataset
-    dataset.to_csv(os.path.join(save_dir, 'stories.csv'))
+    dataset.to_csv(os.path.join(save_dir, 'stories.csv'), index=False)
     print("- done.")
 
 
