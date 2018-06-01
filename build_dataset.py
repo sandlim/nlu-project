@@ -1,8 +1,6 @@
-"""Read, split and save the kaggle dataset for our model"""
+"""Read, split and save the dataset for our model"""
 
-import csv
 import os
-import sys
 import pandas as pd
 import nltk
 
@@ -49,12 +47,6 @@ def load_dataset(path_csv, is_validation=False):
 
 
 def save_dataset(dataset, save_dir):
-    """Writes sentences.txt and labels.txt files in save_dir from dataset
-
-    Args:
-        dataset: ([(["a", "cat"], ["O", "O"]), ...])
-        save_dir: (string)
-    """
     # Create directory if it doesn't exist
     print("Saving in {}...".format(save_dir))
     if not os.path.exists(save_dir):
@@ -99,8 +91,8 @@ if __name__ == "__main__":
     print("- tokenized training set.")
     print("- done.")
 
-    dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
     train_dataset = dataset
+    dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
     dev_split_dataset = dataset_val_shuffled[:int(0.7 * len(dataset_val_shuffled))]
     val_split_dataset = dataset_val_shuffled[:int(0.3 * len(dataset_val_shuffled))]
 
