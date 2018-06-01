@@ -66,11 +66,13 @@ def save_dataset(dataset, save_dir):
 
 
 def tokenize_sentence(sentence):
+    if not isinstance(sentence, str):
+        return sentence
     return " ".join([word for word in nltk.word_tokenize(sentence)])
 
 
 def tokenize(ds):
-    return ds.loc[:, ds.columns != 'label'].applymap(tokenize_sentence)
+    return ds.applymap(tokenize_sentence)
 
 
 if __name__ == "__main__":
