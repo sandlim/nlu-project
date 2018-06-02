@@ -1,5 +1,6 @@
 {
     "model_version": "lstm",
+    "concat_first_four": true,
     "lstm_num_units": 50,
     "embedding_size": 50,
 

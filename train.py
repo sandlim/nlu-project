@@ -10,7 +10,7 @@ from model.utils import Params
 from model.utils import set_logger
 from model.training import train_and_evaluate
 from model.input_fn import input_fn
-from model.input_fn import load_dataset_from_text
+from model.input_fn import load_dataset_from_csv
 from model.model_fn import model_fn
 
 
@@ -59,9 +59,9 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
-    train_stories = load_dataset_from_text(path_train_stories, vocab, params)
-    dev_stories   = load_dataset_from_text(path_dev_stories,   vocab, params)
-    val_stories   = load_dataset_from_text(path_val_stories,   vocab, params)
+    train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
+    dev_stories   = load_dataset_from_csv(path_dev_stories,   vocab, params)
+    val_stories   = load_dataset_from_csv(path_val_stories,   vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.dev_size

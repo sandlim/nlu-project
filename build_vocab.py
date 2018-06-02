@@ -68,8 +68,10 @@ if __name__ == '__main__':
     print("Building word vocabulary...")
     counter = Counter()
     size_train_sentences = update_vocab(os.path.join(args.data_dir, 'train/stories.csv'), counter)
-    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories.csv'), counter)
-    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories.csv'), counter)
+    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories_c.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'dev/stories_w.csv'), counter)
+    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories_c.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'val/stories_w.csv'), counter)
     print("- done.")
 
     # Only keep most frequent tokens
@@ -77,7 +79,7 @@ if __name__ == '__main__':
 
     # Add pad tokens
     if PAD_WORD not in vocab:
-        vocab.append(PAD_WORD)
+        vocab = [PAD_WORD] + vocab
 
     # Save vocabularies to file
     print("Saving vocabularies to file...")
