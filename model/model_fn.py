@@ -19,9 +19,6 @@ def build_model(mode, inputs, params):
 
 
     if params.model_version == 'lstm-classifier':
-        # TODO: 1) merge the first four stories into one sequence
-        #       2) pad the batch (first_four in batch should all have same length,
-        #                         and fifth sentences too)
 
         # Get word embeddings for each token in the sentence
         embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
@@ -29,11 +26,16 @@ def build_model(mode, inputs, params):
         sentence = tf.nn.embedding_lookup(embeddings, sentence)
 
         # Apply LSTM over the embeddings
-        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-        output, _  = tf.nn.dynamic_rnn(lstm_cell, sentence, dtype=tf.float32)
+        lstm_cell_beg= tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
+        output_beg, _  = tf.nn.dynamic_rnn(lstm_cell, story[0], dtype=tf.float32)
+        lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
+        output_end, _  = tf.nn.dynamic_rnn(lstm_cell, story[1], dtype=tf.float32)
+
+        lstm_output = tf.concat([output_beg, output_end], axis=1)
+        output = tf.layers.dense(lstm_output, params.H_size)
 
         # Compute logits from the output of the LSTM
-        logits = tf.layers.dense(output, params.number_of_tags)
+        logits = tf.layers.dense(output, 2)
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(params.model_version))

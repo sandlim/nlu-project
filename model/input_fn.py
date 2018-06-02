@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 
-def load_dataset_from_csv(path_csv, vocab):
+def load_dataset_from_csv(path_csv, vocab, params):
     """Create tf.data Instance from csv file
 
     Args:
@@ -20,23 +20,28 @@ def load_dataset_from_csv(path_csv, vocab):
         COLUMNS = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5','label']
         fields = tf.decode_csv(line, [None] * len(COLUMNS))
         labled_features = dict(zip(fields, COLUMNS)) # not used
-        features = fields[:-1]
+        if params.concat_first_four == True:
+            # TODO: does string concatenation work like this?
+            features = [fields[0] + fields[1] + fields[2] + fields[3], fields[4]]
+        else:
+            features = fields[:-1]
         label = fields[-1]
         return features, label
 
     dataset = dataset.map(_parse_line)
 
-    # the dataset looks like this [({seq1:"...",seq2:[...],...}, {label:<0 or 1>}), ...]
+    # the dataset looks like this [([seq1,...,seq5],label),(...,...),...]
+    # seqi and label are tensors
 
     # Convert line into list of tokens, splitting by white space
-    def _f1(s):
+    def _split(s):
         tf.string_split(s)
-    dataset = dataset.map(lambda x: ({k: _f1(v) for k, v in x[0].items()}, x[1]))
+    dataset = dataset.map(lambda x: ([_split(s) for s in x[0]], x[1]))
 
     # Lookup tokens to return their ids
-    def _f2(tokens):
+    def _tokenize(tokens):
         (vocab.lookup(tokens), tf.size(tokens))
-    dataset = dataset.map(lambda x: ({k: _f2(v) for k, v in x[0].items()}, x[1]))
+    dataset = dataset.map(lambda x: ([_tokenize(s) for s in x[0]), x[1]))
 
     return dataset
 
@@ -60,22 +65,45 @@ def input_fn(mode, datasets, params):
     if mode == 'train_including_dev':
         dataset = dataset.concatenate(datasets[1])
 
-    # I (pascal) find it unpractical to do the padding here...
     # Create batches and pad the sentences of different length
-    # padded_shapes = ((tf.TensorShape([None]),  # sentence of unknown size
-    #                   tf.TensorShape([])),     # size(words)
-    #                  (tf.TensorShape([None]),  # labels of unknown size
-    #                   tf.TensorShape([])))     # size(tags)
-
-    # padding_values = ((params.id_pad_word,   # sentence padded on the right with id_pad_word
-    #                    0),                   # size(words) -- unused
-    #                   (params.id_pad_tag,    # labels padded on the right with id_pad_tag
-    #                    0))                   # size(tags) -- unused
-
+    if params.concat_first_four:
+        padded_shapes = ([(tf.TensorShape([None]),  # sentence 1 - 4 of unknown size
+                           tf.TensorShape([])),     # sequence_length
+                          (tf.TensorShape([None]),  # sentence 5 of unknown size
+                           tf.TensorShape([]))],    # sequence_length
+                          tf.TensorShape([]))       # label
+        padded_values = ([(params.id_pad_word,  # sentence 1 - 4 of unknown size
+                           0),                  #  -- unused 
+                          (params.id_pad_word,  # sentence 5 of unknown size
+                           0)],                 #  -- unused
+                          0)                    #  -- unused
+    else: 
+        padded_shapes = ([(tf.TensorShape([None]),  # sentence 1 of unknown size
+                          tf.TensorShape([])),      # sequence_length
+                         (tf.TensorShape([None]),   # sentence 2 of unknown size
+                          tf.TensorShape([]))],     # sequence_length
+                         (tf.TensorShape([None]),   # sentence 3 of unknown size
+                          tf.TensorShape([]))],     # sequence_length
+                         (tf.TensorShape([None]),   # sentence 4 of unknown size
+                          tf.TensorShape([]))],     # sequence_length
+                         (tf.TensorShape([None]),   # sentence 5 of unknown size
+                          tf.TensorShape([]))],     # sequence_length
+                          tf.TensorShape([]))       # label
+        padded_values = ([(params.id_pad_word,  # sentence 1 of unknown size
+                           0),                  #  -- unused 
+                          (params.id_pad_word,  # sentence 2 of unknown size
+                           0),                  #  -- unused
+                          (params.id_pad_word,  # sentence 3 of unknown size
+                           0),                  #  -- unused
+                          (params.id_pad_word,  # sentence 4 of unknown size
+                           0),                  #  -- unused
+                          (params.id_pad_word,  # sentence 5 of unknown size
+                           0)],                 #  -- unused
+                          0)                    #  -- unused
 
     dataset = (dataset
         .shuffle(buffer_size=buffer_size)
-        # .padded_batch(params.batch_size, padded_shapes=padded_shapes, padding_values=padding_values)
+        .padded_batch(params.batch_size, padded_shapes=padded_shapes, padding_values=padding_values)
         .prefetch(1)  # make sure you always have one batch ready to serve
     )
 
@@ -88,8 +116,8 @@ def input_fn(mode, datasets, params):
 
     # Build and return a dictionnary containing the nodes / ops
     inputs = {
-        'story': story,
-        'label': label,
+        'stories': stories,
+        'labels': labels,
         'iterator_init_op': init_op
     }
 

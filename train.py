@@ -59,14 +59,14 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
-    train_stories = load_dataset_from_text(path_train_stories, words)
-    dev_stories   = load_dataset_from_text(path_dev_stories,   words)
-    val_stories   = load_dataset_from_text(path_val_stories,   words)
+    train_stories = load_dataset_from_text(path_train_stories, vocab, params)
+    dev_stories   = load_dataset_from_text(path_dev_stories,   vocab, params)
+    val_stories   = load_dataset_from_text(path_val_stories,   vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.dev_size
     params.buffer_size = params.train_size # buffer size for shuffling
-    params.id_pad_word = words.lookup(tf.constant(params.pad_word))
+    params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
     # Create the iterators over the datasets
     train_inputs = input_fn('train_including_dev', [train_stories, dev_stories], params)
