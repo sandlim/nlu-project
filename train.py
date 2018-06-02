@@ -17,7 +17,7 @@ from model.model_fn import model_fn
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
-parser.add_argument('--data_dir', default='data/small', help="Directory containing the dataset")
+parser.add_argument('--data_dir', default='data/dev_split', help="Directory containing the dataset")
 parser.add_argument('--restore_dir', default=None,
                     help="Optional, directory containing weights to reload before training")
 parser.add_argument('--overwrite', dest='overwrite', default=False, action='store_true')
@@ -49,33 +49,28 @@ if __name__ == '__main__':
     set_logger(os.path.join(args.model_dir, 'train.log'))
 
     # Get paths for vocabularies and dataset
-    path_words = os.path.join(args.data_dir, 'words.txt')
-    path_tags = os.path.join(args.data_dir, 'tags.txt')
-    path_train_sentences = os.path.join(args.data_dir, 'train/sentences.txt')
-    path_train_labels = os.path.join(args.data_dir, 'train/labels.txt')
-    path_eval_sentences = os.path.join(args.data_dir, 'dev/sentences.txt')
-    path_eval_labels = os.path.join(args.data_dir, 'dev/labels.txt')
+    path_vocab = os.path.join(args.data_dir, 'vocab.txt')
+    path_train_stories = os.path.join(args.data_dir, 'train/stories.txt')
+    path_dev_stories   = os.path.join(args.data_dir, 'dev/sentences.txt')
+    path_val_stories   = os.path.join(args.data_dir, 'val/sentences.txt')
 
     # Load Vocabularies
-    words = tf.contrib.lookup.index_table_from_file(path_words, num_oov_buckets=num_oov_buckets)
-    tags = tf.contrib.lookup.index_table_from_file(path_tags)
+    vocab = tf.contrib.lookup.index_table_from_file(path_vocab, num_oov_buckets=num_oov_buckets)
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
-    train_sentences = load_dataset_from_text(path_train_sentences, words)
-    train_labels = load_dataset_from_text(path_train_labels, tags)
-    eval_sentences = load_dataset_from_text(path_eval_sentences, words)
-    eval_labels = load_dataset_from_text(path_eval_labels, tags)
+    train_stories = load_dataset_from_text(path_train_stories, words)
+    dev_stories   = load_dataset_from_text(path_dev_stories,   words)
+    val_stories   = load_dataset_from_text(path_val_stories,   words)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.dev_size
     params.buffer_size = params.train_size # buffer size for shuffling
     params.id_pad_word = words.lookup(tf.constant(params.pad_word))
-    params.id_pad_tag = tags.lookup(tf.constant(params.pad_tag))
 
-    # Create the two iterators over the two datasets
-    train_inputs = input_fn('train', train_sentences, train_labels, params)
-    eval_inputs = input_fn('eval', eval_sentences, eval_labels, params)
+    # Create the iterators over the datasets
+    train_inputs = input_fn('train_including_dev', [train_stories, dev_stories], params)
+    val_inputs = input_fn('val', [val_stories], params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)

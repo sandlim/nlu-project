@@ -15,9 +15,14 @@ def build_model(mode, inputs, params):
     Returns:
         output: (tf.Tensor) output of the model
     """
-    sentence = inputs['sentence']
+    story = inputs['story']
 
-    if params.model_version == 'lstm':
+
+    if params.model_version == 'lstm-classifier':
+        # TODO: 1) merge the first four stories into one sequence
+        #       2) pad the batch (first_four in batch should all have same length,
+        #                         and fifth sentences too)
+
         # Get word embeddings for each token in the sentence
         embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
                 shape=[params.vocab_size, params.embedding_size])
