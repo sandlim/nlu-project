@@ -94,7 +94,7 @@ if __name__ == "__main__":
     train_dataset = dataset
     dataset_val_shuffled = dataset_val.sample(frac=1).reset_index(drop=True)
     dev_split_dataset = dataset_val_shuffled[:int(0.7 * len(dataset_val_shuffled))]
-    val_split_dataset = dataset_val_shuffled[:int(0.3 * len(dataset_val_shuffled))]
+    val_split_dataset = dataset_val_shuffled[int(0.7 * len(dataset_val_shuffled)):]
 
     # Save the datasets to files
     save_dataset(train_dataset, 'data/dev_split/train')
