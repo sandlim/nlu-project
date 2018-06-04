@@ -91,11 +91,15 @@ def model_fn(mode, inputs, params, reuse=False):
     with tf.variable_scope('model', reuse=reuse):
         # Compute the output distribution of the model and the predictions
         logits = build_model(mode, inputs, params)
-        prediction = tf.argmax(logits, -1)
+        prediction = tf.cast(tf.argmax(logits, -1), tf.int32)
 
     # Define loss and accuracy (we need to apply a mask to account for padding)
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits, labels=label)
+    print("label:")
+    print(label)
+    print("prediction:")
+    print(prediction)
     accuracy = tf.reduce_mean(
         tf.cast(tf.equal(label, prediction), tf.float32))
 
@@ -111,7 +115,7 @@ def model_fn(mode, inputs, params, reuse=False):
     with tf.variable_scope("metrics"):
         metrics = {
             'accuracy':
-            tf.metrics.accuracy(labels=labels, predictions=predictions),
+            tf.metrics.accuracy(labels=label, predictions=prediction),
             'loss':
             tf.metrics.mean(loss)
         }
@@ -137,7 +141,7 @@ def model_fn(mode, inputs, params, reuse=False):
         *[tf.global_variables_initializer(),
           tf.tables_initializer()])
     model_spec['variable_init_op'] = variable_init_op
-    model_spec["predictions"] = predictions
+    model_spec["predictions"] = prediction
     model_spec['loss'] = loss
     model_spec['accuracy'] = accuracy
     model_spec['metrics_init_op'] = metrics_init_op
