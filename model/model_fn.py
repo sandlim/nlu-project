@@ -17,20 +17,19 @@ def build_model(mode, inputs, params):
     """
     story = inputs['story']
 
-
     if params.model_version == 'lstm':
 
         # Get word embeddings for each token in the sentence
         embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
-                shape=[params.vocab_size, params.embedding_size])
+                                     shape=[params.vocab_size, params.embedding_size])
         story = [tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()]
         # Apply LSTM over the embeddings
         with tf.variable_scope('lstm-beg'):
-            lstm_cell_beg= tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_beg, _  = tf.nn.dynamic_rnn(lstm_cell_beg, story[0], dtype=tf.float32)
+            lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
+            output_beg, _ = tf.nn.dynamic_rnn(lstm_cell_beg, story[0], dtype=tf.float32)
         with tf.variable_scope('lstm-end'):
             lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_end, _  = tf.nn.dynamic_rnn(lstm_cell_end, story[1], dtype=tf.float32)
+            output_end, _ = tf.nn.dynamic_rnn(lstm_cell_end, story[1], dtype=tf.float32)
 
         lstm_output = tf.concat([output_beg, output_end], axis=1)
         print(lstm_output)

@@ -13,7 +13,6 @@ from model.input_fn import input_fn
 from model.input_fn import load_dataset_from_csv
 from model.model_fn import model_fn
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
@@ -21,7 +20,6 @@ parser.add_argument('--data_dir', default='data/dev_split', help="Directory cont
 parser.add_argument('--restore_dir', default=None,
                     help="Optional, directory containing weights to reload before training")
 parser.add_argument('--overwrite', dest='overwrite', default=False, action='store_true')
-
 
 if __name__ == '__main__':
     # Set the random seed for the whole graph for reproductible experiments
@@ -37,7 +35,7 @@ if __name__ == '__main__':
     json_path = os.path.join(args.data_dir, 'dataset_params.json')
     assert os.path.isfile(json_path), "No json file found at {}, run build_vocab.py".format(json_path)
     params.update(json_path)
-    num_oov_buckets = params.num_oov_buckets # number of buckets for unknown words
+    num_oov_buckets = params.num_oov_buckets  # number of buckets for unknown words
 
     # Check that we are not overwriting some previous experiment
     if not args.overwrite:
@@ -51,8 +49,8 @@ if __name__ == '__main__':
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
     path_train_stories = os.path.join(args.data_dir, 'train/stories.txt')
-    path_dev_stories   = os.path.join(args.data_dir, 'dev/sentences.txt')
-    path_val_stories   = os.path.join(args.data_dir, 'val/sentences.txt')
+    path_dev_stories = os.path.join(args.data_dir, 'dev/sentences.txt')
+    path_val_stories = os.path.join(args.data_dir, 'val/sentences.txt')
 
     # Load Vocabularies
     vocab = tf.contrib.lookup.index_table_from_file(path_vocab, num_oov_buckets=num_oov_buckets)
@@ -60,12 +58,12 @@ if __name__ == '__main__':
     # Create the input data pipeline
     logging.info("Creating the datasets...")
     train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
-    dev_stories   = load_dataset_from_csv(path_dev_stories,   vocab, params)
-    val_stories   = load_dataset_from_csv(path_val_stories,   vocab, params)
+    dev_stories = load_dataset_from_csv(path_dev_stories, vocab, params)
+    val_stories = load_dataset_from_csv(path_val_stories, vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.dev_size
-    params.buffer_size = params.train_size # buffer size for shuffling
+    params.buffer_size = params.train_size  # buffer size for shuffling
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
     # Create the iterators over the datasets
