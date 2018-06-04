@@ -2,6 +2,35 @@
 
 import tensorflow as tf
 
+def rnn_logits(story, params):
+    # Get word embeddings for each token in the sentence
+    embeddings = tf.get_variable(
+        name="embeddings",
+        dtype=tf.float32,
+        shape=[params.vocab_size, params.embedding_size])
+    story = [
+        tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
+    ]
+    # Apply LSTM over the embeddings
+    with tf.variable_scope('lstm-beg'):
+        lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
+        output_beg, _ = tf.nn.dynamic_rnn(
+            lstm_cell_beg, story[0], dtype=tf.float32)
+    with tf.variable_scope('lstm-end'):
+        lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
+        output_end, _ = tf.nn.dynamic_rnn(
+            lstm_cell_end, story[1], dtype=tf.float32)
+
+    lstm_output = tf.concat([output_beg, output_end], axis=1)
+    print(lstm_output)
+    output = tf.layers.dense(lstm_output, 256)
+    # TODO
+    # output = tf.layers.dense(lstm_output, params.H_size)
+
+    # Compute logits from the output of the LSTM
+    logits = tf.layers.dense(output, 2)
+    return logits
+
 
 def build_model(mode, inputs, params):
     """Compute logits of the model (output distribution)
@@ -15,36 +44,19 @@ def build_model(mode, inputs, params):
     Returns:
         output: (tf.Tensor) output of the model
     """
-    story = inputs['story']
+    if mode == 'train':
+        story = inputs['story']
+    elif mode == 'eval':
+        story_c == inputs['story_c']
+        story_w == inputs['story_w']
 
     if params.model_version == 'lstm':
-
-        # Get word embeddings for each token in the sentence
-        embeddings = tf.get_variable(
-            name="embeddings",
-            dtype=tf.float32,
-            shape=[params.vocab_size, params.embedding_size])
-        story = [
-            tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
-        ]
-        # Apply LSTM over the embeddings
-        with tf.variable_scope('lstm-beg'):
-            lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_beg, _ = tf.nn.dynamic_rnn(
-                lstm_cell_beg, story[0], dtype=tf.float32)
-        with tf.variable_scope('lstm-end'):
-            lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_end, _ = tf.nn.dynamic_rnn(
-                lstm_cell_end, story[1], dtype=tf.float32)
-
-        lstm_output = tf.concat([output_beg, output_end], axis=1)
-        print(lstm_output)
-        output = tf.layers.dense(lstm_output, 256)
-        # TODO
-        # output = tf.layers.dense(lstm_output, params.H_size)
-
-        # Compute logits from the output of the LSTM
-        logits = tf.layers.dense(output, 2)
+        if mode == 'train':
+            logits = rnn_logits(inputs, params)
+        else:  # mode == 'eval':
+            logits_c = rnn_logits(inputs, params)
+            logits_w = rnn_logits(inputs, params)
+            logits = tf.stack([logits_c[1], logits_w[1]])
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(
@@ -67,9 +79,12 @@ def model_fn(mode, inputs, params, reuse=False):
         model_spec: (dict) contains the graph operations or nodes needed for training / evaluation
     """
     is_training = (mode == 'train')
-    label = tf.expand_dims(inputs['label'], axis=0)
-    sentence_lengths = tf.stack(
-        [tf.squeeze(s[1]) for k, s in inputs['story'].items()])
+    if is_training:
+        label = tf.expand_dims(inputs['label'], axis=0)
+    else:
+        label = tf.expand_dims(tf.constant(0), axis=0)  # the first one is correct (always)
+    # sentence_lengths = tf.stack(
+    #     [tf.squeeze(s[1]) for k, s in inputs['story'].items()])
 
     # -----------------------------------------------------------
     # MODEL: define the layers of the model

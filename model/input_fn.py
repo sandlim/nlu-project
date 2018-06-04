@@ -136,6 +136,10 @@ def input_fn(mode, datasets, params):
     init_op = iterator.initializer
 
     # Build and return a dictionary containing the nodes / ops
-    inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}
+    if mode == 'eval':
+        ((story_c, l_c), (story_w, l_w)) = iterator.get_next()
+        inputs = {'story_c': story_c, 'story_w': story_w, 'iterator_init_op': init_op}
+    else:
+        inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}
 
     return inputs
