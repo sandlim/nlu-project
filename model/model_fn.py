@@ -20,16 +20,22 @@ def build_model(mode, inputs, params):
     if params.model_version == 'lstm':
 
         # Get word embeddings for each token in the sentence
-        embeddings = tf.get_variable(name="embeddings", dtype=tf.float32,
-                                     shape=[params.vocab_size, params.embedding_size])
-        story = [tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()]
+        embeddings = tf.get_variable(
+            name="embeddings",
+            dtype=tf.float32,
+            shape=[params.vocab_size, params.embedding_size])
+        story = [
+            tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
+        ]
         # Apply LSTM over the embeddings
         with tf.variable_scope('lstm-beg'):
             lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_beg, _ = tf.nn.dynamic_rnn(lstm_cell_beg, story[0], dtype=tf.float32)
+            output_beg, _ = tf.nn.dynamic_rnn(
+                lstm_cell_beg, story[0], dtype=tf.float32)
         with tf.variable_scope('lstm-end'):
             lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-            output_end, _ = tf.nn.dynamic_rnn(lstm_cell_end, story[1], dtype=tf.float32)
+            output_end, _ = tf.nn.dynamic_rnn(
+                lstm_cell_end, story[1], dtype=tf.float32)
 
         lstm_output = tf.concat([output_beg, output_end], axis=1)
         print(lstm_output)
@@ -41,7 +47,8 @@ def build_model(mode, inputs, params):
         logits = tf.layers.dense(output, 2)
 
     else:
-        raise NotImplementedError("Unknown model version: {}".format(params.model_version))
+        raise NotImplementedError("Unknown model version: {}".format(
+            params.model_version))
 
     return logits
 
@@ -61,7 +68,8 @@ def model_fn(mode, inputs, params, reuse=False):
     """
     is_training = (mode == 'train')
     label = tf.expand_dims(inputs['label'], axis=0)
-    sentence_lengths = tf.stack([tf.squeeze(s[1]) for k, s in inputs['story'].items()])
+    sentence_lengths = tf.stack(
+        [tf.squeeze(s[1]) for k, s in inputs['story'].items()])
 
     # -----------------------------------------------------------
     # MODEL: define the layers of the model
@@ -71,11 +79,13 @@ def model_fn(mode, inputs, params, reuse=False):
         predictions = tf.argmax(logits, -1)
 
     # Define loss and accuracy (we need to apply a mask to account for padding)
-    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=label)
+    losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits=logits, labels=label)
     mask = tf.sequence_mask(sentence_lengths)
     losses = tf.boolean_mask(losses, mask)
     loss = tf.reduce_mean(losses)
-    accuracy = tf.reduce_mean(tf.cast(tf.equal(label, predictions), tf.float32))
+    accuracy = tf.reduce_mean(
+        tf.cast(tf.equal(label, predictions), tf.float32))
 
     # Define training step that minimizes the loss with the Adam optimizer
     if is_training:
@@ -88,15 +98,18 @@ def model_fn(mode, inputs, params, reuse=False):
     # Metrics for evaluation using tf.metrics (average over whole dataset)
     with tf.variable_scope("metrics"):
         metrics = {
-            'accuracy': tf.metrics.accuracy(labels=labels, predictions=predictions),
-            'loss': tf.metrics.mean(loss)
+            'accuracy':
+            tf.metrics.accuracy(labels=labels, predictions=predictions),
+            'loss':
+            tf.metrics.mean(loss)
         }
 
     # Group the update ops for the tf.metrics
     update_metrics_op = tf.group(*[op for _, op in metrics.values()])
 
     # Get the op to reset the local variables used in tf.metrics
-    metric_variables = tf.get_collection(tf.GraphKeys.LOCAL_VARIABLES, scope="metrics")
+    metric_variables = tf.get_collection(
+        tf.GraphKeys.LOCAL_VARIABLES, scope="metrics")
     metrics_init_op = tf.variables_initializer(metric_variables)
 
     # Summaries for training
@@ -108,7 +121,9 @@ def model_fn(mode, inputs, params, reuse=False):
     # Create the model specification and return it
     # It contains nodes or operations in the graph that will be used for training and evaluation
     model_spec = inputs
-    variable_init_op = tf.group(*[tf.global_variables_initializer(), tf.tables_initializer()])
+    variable_init_op = tf.group(
+        *[tf.global_variables_initializer(),
+          tf.tables_initializer()])
     model_spec['variable_init_op'] = variable_init_op
     model_spec["predictions"] = predictions
     model_spec['loss'] = loss

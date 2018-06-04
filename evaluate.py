@@ -14,13 +14,19 @@ from model.input_fn import input_fn
 from model.input_fn import load_dataset_from_text
 from model.model_fn import model_fn
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_dir', default='experiments/base_model',
-                    help="Directory containing params.json")
-parser.add_argument('--data_dir', default='data/small', help="Directory containing the dataset")
-parser.add_argument('--restore_from', default='best_weights',
-                    help="Subdirectory of model dir or file containing the weights")
+parser.add_argument(
+    '--model_dir',
+    default='experiments/base_model',
+    help="Directory containing params.json")
+parser.add_argument(
+    '--data_dir',
+    default='data/small',
+    help="Directory containing the dataset")
+parser.add_argument(
+    '--restore_from',
+    default='best_weights',
+    help="Subdirectory of model dir or file containing the weights")
 
 if __name__ == '__main__':
     # Set the random seed for the whole graph
@@ -29,14 +35,16 @@ if __name__ == '__main__':
     # Load the parameters
     args = parser.parse_args()
     json_path = os.path.join(args.model_dir, 'params.json')
-    assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
+    assert os.path.isfile(
+        json_path), "No json configuration file found at {}".format(json_path)
     params = Params(json_path)
 
     # Load the parameters from the dataset, that gives the size etc. into params
     json_path = os.path.join(args.data_dir, 'dataset_params.json')
-    assert os.path.isfile(json_path), "No json file found at {}, run build.py".format(json_path)
+    assert os.path.isfile(
+        json_path), "No json file found at {}, run build.py".format(json_path)
     params.update(json_path)
-    num_oov_buckets = params.num_oov_buckets # number of buckets for unknown words
+    num_oov_buckets = params.num_oov_buckets  # number of buckets for unknown words
 
     # Set the logger
     set_logger(os.path.join(args.model_dir, 'evaluate.log'))
@@ -48,7 +56,8 @@ if __name__ == '__main__':
     path_eval_labels = os.path.join(args.data_dir, 'dev/labels.txt')
 
     # Load Vocabularies
-    words = tf.contrib.lookup.index_table_from_file(path_words, num_oov_buckets=num_oov_buckets)
+    words = tf.contrib.lookup.index_table_from_file(
+        path_words, num_oov_buckets=num_oov_buckets)
     tags = tf.contrib.lookup.index_table_from_file(path_tags)
 
     # Create the input data pipeline
