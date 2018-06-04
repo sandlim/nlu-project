@@ -60,9 +60,11 @@ if __name__ == '__main__':
 
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
-    path_train_stories = os.path.join(args.data_dir, 'train/stories.txt')
-    path_dev_stories = os.path.join(args.data_dir, 'dev/sentences.txt')
-    path_val_stories = os.path.join(args.data_dir, 'val/sentences.txt')
+    path_train_stories = os.path.join(args.data_dir, 'train/stories.csv')
+    path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories_c.csv')
+    path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories_w.csv')
+    path_val_stories_c = os.path.join(args.data_dir, 'val/stories_c.csv')
+    path_val_stories_w = os.path.join(args.data_dir, 'val/stories_w.csv')
 
     # Load Vocabularies
     vocab = tf.contrib.lookup.index_table_from_file(
@@ -71,8 +73,10 @@ if __name__ == '__main__':
     # Create the input data pipeline
     logging.info("Creating the datasets...")
     train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
-    dev_stories = load_dataset_from_csv(path_dev_stories, vocab, params)
-    val_stories = load_dataset_from_csv(path_val_stories, vocab, params)
+    dev_stories_c = load_dataset_from_csv(path_dev_stories_c, vocab, params)
+    dev_stories_w = load_dataset_from_csv(path_dev_stories_w, vocab, params)
+    val_stories_c = load_dataset_from_csv(path_val_stories_c, vocab, params)
+    val_stories_w = load_dataset_from_csv(path_val_stories_w, vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.dev_size
@@ -81,14 +85,14 @@ if __name__ == '__main__':
 
     # Create the iterators over the datasets
     train_inputs = input_fn('train_including_dev',
-                            [train_stories, dev_stories], params)
-    val_inputs = input_fn('val', [val_stories], params)
+                            [train_stories, dev_stories_c, dev_stories_w], params)
+    val_inputs = input_fn('val', [val_stories_c, val_stories_w], params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)
     logging.info("Creating the model...")
     train_model_spec = model_fn('train', train_inputs, params)
-    eval_model_spec = model_fn('eval', eval_inputs, params, reuse=True)
+    eval_model_spec = model_fn('eval', val_inputs, params, reuse=True)
     logging.info("- done.")
 
     # Train the model

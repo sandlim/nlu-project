@@ -54,6 +54,7 @@ def load_dataset_from_csv(path_csv, vocab, params):
     return dataset
 
 
+
 def input_fn(mode, datasets, params):
     """Input function
 
@@ -69,23 +70,35 @@ def input_fn(mode, datasets, params):
     buffer_size = params.buffer_size if is_training else 1
 
     # Zip the sentence and the labels together
-    dataset = datasets[0]
+    dataset: tf.data.Dataset = datasets[0]
     if mode == 'train_including_dev':
-        dataset = dataset.concatenate(datasets[1])
+        dataset = dataset.concatenate(datasets[1])  # correct ones
+        dataset = dataset.concatenate(datasets[2])  # wrong ones
+
+    if mode == 'eval':
+        dataset = dataset.zip(datasets[1])
+
+    # TODO: use this to make the creation of the padded_shapes more compact/readable
+    # if params.concat_first_four:
+    #     num_seq_in_story = 2
+    # else:
+    #     num_seq_in_story = 5
 
     # Create batches and pad the sentences of different length
     if params.concat_first_four:
         padded_shapes = (
             {
                 'beg': (
-                    tf.TensorShape([None]),  # sentence 1 - 4 of unknown size
+                    tf.TensorShape(
+                        [None]),  # sentence 1 - 4 of unknown size
                     tf.TensorShape([])),  # sequence_length
                 'end': (
                     tf.TensorShape([None]),  # sentence 5 of unknown size
-                    tf.TensorShape([]))
-            },  # sequence_length
+                    tf.TensorShape([]))  # sequence_length
+            },
             tf.TensorShape([]))  # label
     else:
+        # TODO: does not work yet (have to use dict)
         padded_shapes = (
             [
                 (
@@ -102,9 +115,12 @@ def input_fn(mode, datasets, params):
                     tf.TensorShape([])),  # sequence_length
                 (
                     tf.TensorShape([None]),  # sentence 5 of unknown size
-                    tf.TensorShape([]))
-            ],  # sequence_length
+                    tf.TensorShape([]))  # sequence_length
+            ],
             tf.TensorShape([]))  # label
+
+    if mode == 'eval':
+        padded_shapes = (padded_shapes, padded_shapes)
 
     dataset = (
         dataset.shuffle(buffer_size=buffer_size).padded_batch(
