@@ -47,15 +47,15 @@ def build_model(mode, inputs, params):
     if mode == 'train':
         story = inputs['story']
     elif mode == 'eval':
-        story_c == inputs['story_c']
-        story_w == inputs['story_w']
+        story_c = inputs['story_c']
+        story_w = inputs['story_w']
 
     if params.model_version == 'lstm':
         if mode == 'train':
-            logits = rnn_logits(inputs, params)
-        else:  # mode == 'eval':
-            logits_c = rnn_logits(inputs, params)
-            logits_w = rnn_logits(inputs, params)
+            logits = rnn_logits(story, params)
+        elif mode == 'eval':
+            logits_c = rnn_logits(story_c, params)
+            logits_w = rnn_logits(story_w, params)
             logits = tf.stack([logits_c[1], logits_w[1]])
 
     else:
