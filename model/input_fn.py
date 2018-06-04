@@ -17,8 +17,8 @@ def load_dataset_from_csv(path_csv, vocab, params):
     dataset = tf.data.TextLineDataset(path_csv).skip(1)
 
     def _parse_line(line):
-        COLUMNS = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5','label']
-        fields = tf.decode_csv(line, [tf.constant([""])] * len(COLUMNS))
+        COLUMNS = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'label']
+        fields = tf.decode_csv(line, ([tf.constant([""])] * (len(COLUMNS)-1)) + [tf.constant([0])])
         if params.concat_first_four == True:
             features = {'beg':tf.expand_dims(fields[0] + fields[1] + fields[2] + fields[3], 0), 'end':tf.expand_dims(fields[4], 0)}
         else:
@@ -93,13 +93,13 @@ def input_fn(mode, datasets, params):
     iterator = dataset.make_initializable_iterator()
 
     # Query the output of the iterator for input to the model
-    (stories, labels) = iterator.get_next()
+    (story, label) = iterator.get_next()
     init_op = iterator.initializer
 
-    # Build and return a dictionnary containing the nodes / ops
+    # Build and return a dictionary containing the nodes / ops
     inputs = {
-        'stories': stories,
-        'labels': labels,
+        'story': story,
+        'label': label,
         'iterator_init_op': init_op
     }
 
