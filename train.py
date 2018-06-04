@@ -86,12 +86,13 @@ if __name__ == '__main__':
     # Create the iterators over the datasets
     train_inputs = input_fn('train_including_dev',
                             [train_stories, dev_stories_c, dev_stories_w], params)
-    val_inputs = input_fn('val', [val_stories_c, val_stories_w], params)
+    val_inputs = input_fn('eval', [val_stories_c, val_stories_w], params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)
     logging.info("Creating the model...")
     train_model_spec = model_fn('train', train_inputs, params)
+    logging.info("- created train-model...")
     eval_model_spec = model_fn('eval', val_inputs, params, reuse=True)
     logging.info("- done.")
 

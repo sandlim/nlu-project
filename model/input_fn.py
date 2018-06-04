@@ -70,13 +70,17 @@ def input_fn(mode, datasets, params):
     buffer_size = params.buffer_size if is_training else 1
 
     # Zip the sentence and the labels together
-    dataset: tf.data.Dataset = datasets[0]
+    dataset = datasets[0]
     if mode == 'train_including_dev':
         dataset = dataset.concatenate(datasets[1])  # correct ones
         dataset = dataset.concatenate(datasets[2])  # wrong ones
 
     if mode == 'eval':
-        dataset = dataset.zip(datasets[1])
+        print("wrong endings dataset:")
+        print(datasets[1])
+        dataset = tf.data.Dataset.zip((dataset, datasets[1]))
+        print("zipped dataset:")
+        print(dataset)
 
     # TODO: use this to make the creation of the padded_shapes more compact/readable
     # if params.concat_first_four:
@@ -121,6 +125,8 @@ def input_fn(mode, datasets, params):
 
     if mode == 'eval':
         padded_shapes = (padded_shapes, padded_shapes)
+        print("mode: eval")
+        print(padded_shapes)
 
     dataset = (
         dataset.shuffle(buffer_size=buffer_size).padded_batch(
@@ -132,7 +138,6 @@ def input_fn(mode, datasets, params):
     iterator = dataset.make_initializable_iterator()
 
     # Query the output of the iterator for input to the model
-    (story, label) = iterator.get_next()
     init_op = iterator.initializer
 
     # Build and return a dictionary containing the nodes / ops
@@ -140,6 +145,7 @@ def input_fn(mode, datasets, params):
         ((story_c, l_c), (story_w, l_w)) = iterator.get_next()
         inputs = {'story_c': story_c, 'story_w': story_w, 'iterator_init_op': init_op}
     else:
+        (story, label) = iterator.get_next()
         inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}
 
     return inputs

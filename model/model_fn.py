@@ -47,6 +47,8 @@ def build_model(mode, inputs, params):
     if mode == 'train':
         story = inputs['story']
     elif mode == 'eval':
+        print(mode)
+        print(inputs)
         story_c = inputs['story_c']
         story_w = inputs['story_w']
 
