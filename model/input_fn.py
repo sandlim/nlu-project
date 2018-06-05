@@ -18,13 +18,17 @@ def load_dataset_from_csv(path_csv, vocab, params):
 
     def _parse_line(line):
         COLUMNS = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'label']
-        fields = tf.decode_csv(line, ([tf.constant([""])] *
-                                      (len(COLUMNS) - 1)) + [tf.constant([0])])
+        fields = tf.decode_csv(
+            line,
+            ([tf.constant([""])] * (len(COLUMNS) - 1)) + [tf.constant([0])])
         if params.concat_first_four == True:
             features = {
                 'beg':
-                tf.expand_dims(fields[0] + fields[1] + fields[2] + fields[3],
-                               0),
+                tf.expand_dims(
+                    tf.string_join(
+                        [fields[0], fields[1], fields[2], fields[3]],
+                        separator=' ',
+                        name=None), 0),
                 'end':
                 tf.expand_dims(fields[4], 0)
             }
@@ -51,7 +55,6 @@ def load_dataset_from_csv(path_csv, vocab, params):
     dataset = dataset.map(lambda x1, x2: ({k: _vocabularize(s) for k, s in x1.items()}, x2))
 
     return dataset
-
 
 
 def input_fn(mode, datasets, params):
@@ -88,8 +91,7 @@ def input_fn(mode, datasets, params):
         padded_shapes = (
             {
                 'beg': (
-                    tf.TensorShape(
-                        [None]),  # sentence 1 - 4 of unknown size
+                    tf.TensorShape([None]),  # sentence 1 - 4 of unknown size
                     tf.TensorShape([])),  # sequence_length
                 'end': (
                     tf.TensorShape([None]),  # sentence 5 of unknown size
@@ -135,8 +137,14 @@ def input_fn(mode, datasets, params):
 
     # Build and return a dictionary containing the nodes / ops
     if mode == 'eval':
+        # 1, 0
         ((story_c, l_c), (story_w, l_w)) = iterator.get_next()
-        inputs = {'story_c': story_c, 'story_w': story_w, 'label': l_w, 'iterator_init_op': init_op}
+        inputs = {
+            'story_c': story_c,
+            'story_w': story_w,
+            'label': l_w,
+            'iterator_init_op': init_op
+        }
     else:
         (story, label) = iterator.get_next()
         inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}

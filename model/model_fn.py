@@ -8,6 +8,9 @@ def rnn_logits(story, params):
         name="embeddings",
         dtype=tf.float32,
         shape=[params.vocab_size, params.embedding_size])
+    length = [
+        s[1] for k, s in story.items()
+    ]
     story = [
         tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
     ]
@@ -22,7 +25,6 @@ def rnn_logits(story, params):
         lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
         outputs_end, _ = tf.nn.dynamic_rnn(
             lstm_cell_end, story[1], dtype=tf.float32)
-
     
     output_beg = outputs_beg[:,-1]
     output_end = outputs_end[:,-1]
@@ -65,9 +67,7 @@ def build_model(mode, inputs, params):
         elif mode == 'eval':
             logits_c = rnn_logits(story_c, params)
             logits_w = rnn_logits(story_w, params)
-            logits_w = my_print(logits_w, 'logits_w')
             logits = tf.stack([logits_c[:,1], logits_w[:,1]], axis=1)
-            logits= my_print(logits, 'logits')
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(

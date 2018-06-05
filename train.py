@@ -27,7 +27,7 @@ parser.add_argument(
     default=None,
     help="Optional, directory containing weights to reload before training")
 parser.add_argument(
-    '--overwrite', dest='overwrite', default=False, action='store_true')
+    '--overwrite', dest='overwrite', default=True, action='store_true')
 
 if __name__ == '__main__':
     # Set the random seed for the whole graph for reproductible experiments
@@ -78,15 +78,30 @@ if __name__ == '__main__':
     val_stories_c = load_dataset_from_csv(path_val_stories_c, vocab, params)
     val_stories_w = load_dataset_from_csv(path_val_stories_w, vocab, params)
 
+    cheat = True
+    if cheat:
+        params.train_size += params.dev_size * 2
+    else:
+        params.eval_size += params.dev_size
+
     # Specify other parameters for the dataset and the model
-    params.eval_size = params.dev_size
     params.buffer_size = params.train_size  # buffer size for shuffling
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
     # Create the iterators over the datasets
-    train_inputs = input_fn('train_including_dev',
-                            [train_stories, dev_stories_c, dev_stories_w], params)
-    val_inputs = input_fn('eval', [val_stories_c, val_stories_w], params)
+    if cheat:
+        train_inputs = input_fn('train_including_dev',
+                                [train_stories, dev_stories_c, dev_stories_w],
+                                params)
+        val_inputs = input_fn(
+            'eval', [val_stories_c, val_stories_w],
+            params)
+    else:
+        train_inputs = input_fn('train', [train_stories], params)
+        val_inputs = input_fn('eval', [
+            val_stories_c.concatenate(dev_stories_c),
+            val_stories_w.concatenate(dev_stories_w)
+        ], params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)

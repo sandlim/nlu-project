@@ -11,7 +11,7 @@ from model.utils import Params
 from model.utils import set_logger
 from model.evaluation import evaluate
 from model.input_fn import input_fn
-from model.input_fn import load_dataset_from_text
+from model.input_fn import load_dataset_from_csv
 from model.model_fn import model_fn
 
 parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ parser.add_argument(
     help="Directory containing params.json")
 parser.add_argument(
     '--data_dir',
-    default='data/small',
+    default='data/dev_split',
     help="Directory containing the dataset")
 parser.add_argument(
     '--restore_from',
@@ -50,10 +50,9 @@ if __name__ == '__main__':
     set_logger(os.path.join(args.model_dir, 'evaluate.log'))
 
     # Get paths for vocabularies and dataset
-    path_words = os.path.join(args.data_dir, 'words.txt')
-    path_tags = os.path.join(args.data_dir, 'tags.txt')
-    path_eval_sentences = os.path.join(args.data_dir, 'dev/sentences.txt')
-    path_eval_labels = os.path.join(args.data_dir, 'dev/labels.txt')
+    path_vocab = os.path.join(args.data_dir, 'vocab.txt')
+    path_val_stories_c = os.path.join(args.data_dir, 'val/stories_c.csv')
+    path_val_stories_w = os.path.join(args.data_dir, 'val/stories_w.csv')
 
     # Load Vocabularies
     words = tf.contrib.lookup.index_table_from_file(
@@ -62,8 +61,8 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    test_sentences = load_dataset_from_text(path_eval_sentences, words)
-    test_labels = load_dataset_from_text(path_eval_labels, tags)
+    val_stories_c = load_dataset_from_csv(path_val_stories_c, vocab, params)
+    val_stories_w = load_dataset_from_csv(path_val_stories_w, vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.test_size
