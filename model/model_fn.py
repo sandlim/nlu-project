@@ -22,13 +22,13 @@ def rnn_logits(story, params):
             lstm_cell_end, story[1], dtype=tf.float32)
 
     lstm_output = tf.concat([output_beg, output_end], axis=1)
-    print(lstm_output)
-    output = tf.layers.dense(lstm_output, 256)
-    # TODO
-    # output = tf.layers.dense(lstm_output, params.H_size)
+    with tf.variable_scope('H_layer'):
+        output = tf.layers.dense(lstm_output, 256, name='H_output')
+        # TODO
+        # output = tf.layers.dense(lstm_output, params.H_size)
 
     # Compute logits from the output of the LSTM
-    logits = tf.layers.dense(output, 2)
+    logits = tf.layers.dense(output, 2, name='rnn_logits')
     return logits
 
 
@@ -47,8 +47,6 @@ def build_model(mode, inputs, params):
     if mode == 'train':
         story = inputs['story']
     elif mode == 'eval':
-        print(mode)
-        print(inputs)
         story_c = inputs['story_c']
         story_w = inputs['story_w']
 
@@ -81,10 +79,7 @@ def model_fn(mode, inputs, params, reuse=False):
         model_spec: (dict) contains the graph operations or nodes needed for training / evaluation
     """
     is_training = (mode == 'train')
-    if is_training:
-        label = tf.expand_dims(inputs['label'], axis=0)
-    else:
-        label = tf.expand_dims(tf.constant(0), axis=0)  # the first one is correct (always)
+    label = tf.expand_dims(inputs['label'], axis=0)
     # sentence_lengths = tf.stack(
     #     [tf.squeeze(s[1]) for k, s in inputs['story'].items()])
 
@@ -93,15 +88,11 @@ def model_fn(mode, inputs, params, reuse=False):
     with tf.variable_scope('model', reuse=reuse):
         # Compute the output distribution of the model and the predictions
         logits = build_model(mode, inputs, params)
-        prediction = tf.cast(tf.argmax(logits, -1), tf.int32)
+        prediction = tf.cast(tf.argmax(logits, 0), tf.int32)
 
     # Define loss and accuracy (we need to apply a mask to account for padding)
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits, labels=label)
-    print("label:")
-    print(label)
-    print("prediction:")
-    print(prediction)
     accuracy = tf.reduce_mean(
         tf.cast(tf.equal(label, prediction), tf.float32))
 
