@@ -90,7 +90,7 @@ if __name__ == '__main__':
     sizes = {
         'train_size': size_train_sentences,
         'dev_size': size_dev_sentences,
-        'val_size': size_val_sentences,
+        'eval_size': size_val_sentences,
         'vocab_size': len(vocab) + NUM_OOV_BUCKETS,
         'pad_word': PAD_WORD,
         'num_oov_buckets': NUM_OOV_BUCKETS

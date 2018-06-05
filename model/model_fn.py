@@ -65,7 +65,9 @@ def build_model(mode, inputs, params):
         elif mode == 'eval':
             logits_c = rnn_logits(story_c, params)
             logits_w = rnn_logits(story_w, params)
-            logits = tf.stack([logits_c[1], logits_w[1]])
+            logits_w = my_print(logits_w, 'logits_w')
+            logits = tf.stack([logits_c[:,1], logits_w[:,1]], axis=1)
+            logits= my_print(logits, 'logits')
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(
@@ -98,9 +100,10 @@ def model_fn(mode, inputs, params, reuse=False):
     with tf.variable_scope('model', reuse=reuse):
         # Compute the output distribution of the model and the predictions
         logits = build_model(mode, inputs, params)
-        prediction = tf.cast(tf.argmax(logits, 0), tf.int32)
+        prediction = tf.cast(tf.argmax(logits, 1), tf.int32)
 
-    if is_training and False:
+    verbose = False
+    if is_training and verbose:
         print("static shape of label:")
         print(label.shape)
         input_story_beg = inputs['story']['beg'][0]
@@ -115,9 +118,9 @@ def model_fn(mode, inputs, params, reuse=False):
     # Define loss and accuracy (we need to apply a mask to account for padding)
     raw_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits, labels=label)
-    raw_loss = tf.Print(raw_loss, [raw_loss, tf.shape(raw_loss)], message='raw_loss')
+    # raw_loss = tf.Print(raw_loss, [raw_loss, tf.shape(raw_loss)], message='raw_loss')
     loss = tf.reduce_mean(raw_loss)
-    loss = tf.Print(loss, [loss, tf.shape(loss)], message='loss')
+    # loss = tf.Print(loss, [loss, tf.shape(loss)], message='loss')
     accuracy = tf.reduce_mean(
         tf.cast(tf.equal(label, prediction), tf.float32))
 
@@ -171,3 +174,7 @@ def model_fn(mode, inputs, params, reuse=False):
         model_spec['train_op'] = train_op
 
     return model_spec
+
+def my_print(t, m):
+    t = tf.Print(t, [t, tf.shape(t)], message=m)
+    return t
