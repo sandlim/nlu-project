@@ -4,6 +4,8 @@ data/*
 vocab/*
 results/*
 !vocab/.gitkeep
+experiments/*
+!experiments/.gitkeep
 **/*.swp
 .idea/
 
