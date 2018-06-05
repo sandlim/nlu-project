@@ -11,17 +11,26 @@ def rnn_logits(story, params):
     story = [
         tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
     ]
+    # story[0] = tf.Print(story[0], [story[0], tf.shape(story[0])], message='story[0]')
+    # story[1] = tf.Print(story[1], [story[1], tf.shape(story[1])], message='story[1]')
     # Apply LSTM over the embeddings
     with tf.variable_scope('lstm-beg'):
         lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-        output_beg, _ = tf.nn.dynamic_rnn(
+        outputs_beg, _ = tf.nn.dynamic_rnn(
             lstm_cell_beg, story[0], dtype=tf.float32)
     with tf.variable_scope('lstm-end'):
         lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
-        output_end, _ = tf.nn.dynamic_rnn(
+        outputs_end, _ = tf.nn.dynamic_rnn(
             lstm_cell_end, story[1], dtype=tf.float32)
 
+    
+    output_beg = outputs_beg[:,-1]
+    output_end = outputs_end[:,-1]
+    # output_beg = tf.Print(output_beg, [output_beg, tf.shape(output_beg)], message='\noutput_beg')
+    # output_end = tf.Print(output_end, [output_end, tf.shape(output_end)], message='\noutput_end')
     lstm_output = tf.concat([output_beg, output_end], axis=1)
+    # lstm_output = tf.Print(lstm_output, [lstm_output, tf.shape(lstm_output)], message='\nlstm_output', summarize=100)
+
     with tf.variable_scope('H_layer'):
         output = tf.layers.dense(lstm_output, 256, name='H_output')
         # TODO
@@ -62,6 +71,7 @@ def build_model(mode, inputs, params):
         raise NotImplementedError("Unknown model version: {}".format(
             params.model_version))
 
+    
     return logits
 
 
@@ -79,7 +89,7 @@ def model_fn(mode, inputs, params, reuse=False):
         model_spec: (dict) contains the graph operations or nodes needed for training / evaluation
     """
     is_training = (mode == 'train')
-    label = tf.expand_dims(inputs['label'], axis=0)
+    label = inputs['label']
     # sentence_lengths = tf.stack(
     #     [tf.squeeze(s[1]) for k, s in inputs['story'].items()])
 
@@ -90,9 +100,24 @@ def model_fn(mode, inputs, params, reuse=False):
         logits = build_model(mode, inputs, params)
         prediction = tf.cast(tf.argmax(logits, 0), tf.int32)
 
+    if is_training and False:
+        print("static shape of label:")
+        print(label.shape)
+        input_story_beg = inputs['story']['beg'][0]
+        print("input_story_beg")
+        print(input_story_beg)
+        logits = tf.Print(logits, [input_story_beg, tf.shape(input_story_beg)], message='inputs_story', summarize=200)
+        input_story_end = inputs['story']['end'][0]
+        logits = tf.Print(logits, [input_story_end, tf.shape(input_story_end)], message='inputs_story', summarize=200)
+        logits = tf.Print(logits, [logits, tf.shape(logits)], message='logits', summarize=200)
+        label = tf.Print(label, [label, tf.shape(label)], message='label')
+
     # Define loss and accuracy (we need to apply a mask to account for padding)
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+    raw_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
         logits=logits, labels=label)
+    raw_loss = tf.Print(raw_loss, [raw_loss, tf.shape(raw_loss)], message='raw_loss')
+    loss = tf.reduce_mean(raw_loss)
+    loss = tf.Print(loss, [loss, tf.shape(loss)], message='loss')
     accuracy = tf.reduce_mean(
         tf.cast(tf.equal(label, prediction), tf.float32))
 
