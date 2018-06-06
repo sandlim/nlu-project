@@ -88,8 +88,16 @@ def generate_endings(path, store_path):
             stories_w.append(new_story)
 
     with open(store_path, "w") as f:
+        f.write("sentence1,"
+                "sentence2,"
+                "sentence3,"
+                "sentence4,"
+                "sentence5,"
+                "label"
+                "\n")
         for story in stories_w:
-            f.write(",".join(story))
+            f.write(",".join("\"" + story + "\""))
+            f.write("," + "0")  # label
             f.write("\n")
 
 
