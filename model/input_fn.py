@@ -3,7 +3,7 @@
 import tensorflow as tf
 
 
-def load_dataset_from_csv(path_csv, vocab, params):
+def load_dataset_from_csv(path_csv):
     """Create tf.data Instance from csv file
 
     Args:
@@ -14,7 +14,10 @@ def load_dataset_from_csv(path_csv, vocab, params):
         dataset: (tf.Dataset) yielding list of ids of tokens for each example
     """
     # Load csv file, one example per line
-    dataset = tf.data.TextLineDataset(path_csv).skip(1)
+    return tf.data.TextLineDataset(path_csv).skip(1)
+
+
+def process_text_line_dataset(dataset, mode, vocab, params):
 
     def _parse_line(line):
         COLUMNS = ['seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'label']
@@ -37,7 +40,10 @@ def load_dataset_from_csv(path_csv, vocab, params):
         label = fields[-1]
         return features, label
 
-    dataset = dataset.map(_parse_line)
+    if mode == 'eval':
+        dataset = dataset.map(lambda l1, l2: (_parse_line(l1), _parse_line(l2)))
+    else:
+        dataset = dataset.map(_parse_line)
 
     # the dataset looks like this [([seq1,...,seq5],label),(...,...),...]
     # seqi and label are tensors
@@ -46,25 +52,32 @@ def load_dataset_from_csv(path_csv, vocab, params):
     def _split(s):
         return tf.string_split(s).values
 
-    dataset = dataset.map(lambda x1, x2: ({k: _split(s) for k, s in x1.items()}, x2))
-
     # Lookup tokens to return their ids
     def _vocabularize(tokens):
         return (vocab.lookup(tokens), tf.size(tokens))
 
-    dataset = dataset.map(lambda x1, x2: ({k: _vocabularize(s) for k, s in x1.items()}, x2))
+    apply_split = lambda x1, x2: ({k: _split(s) for k, s in x1.items()}, x2)
+    apply_vocabularize = lambda x1, x2: ({k: _vocabularize(s) for k, s in x1.items()}, x2)
+
+    if mode == 'eval':
+        dataset = dataset.map(lambda l1, l2: (apply_split(*l1), apply_split(*l2)))
+        dataset = dataset.map(lambda l1, l2: (apply_vocabularize(*l1), apply_vocabularize(*l2)))
+    else:
+        dataset = dataset.map(apply_split)
+        dataset = dataset.map(apply_vocabularize)
 
     return dataset
 
 
-def input_fn(mode, datasets, params):
+def input_fn(mode, datasets, vocab, params):
     """Input function
 
     Args:
-        mode: (string) 'train', 'eval' or any other mode you can think of
+        :param mode: (string) 'train', 'eval' or any other mode you can think of
                      At training, we shuffle the data and have multiple epochs
-        datasets: (list of tf.Dataset)
-        params: (Params) contains hyperparameters of the model (ex: `params.num_epochs`)
+        :param datasets: (list of tf.Dataset)
+        :param vocab: The vocab
+        :param params: (Params) contains hyperparameters of the model (ex: `params.num_epochs`)
 
     """
     # Load all the dataset in memory for shuffling is training
@@ -79,6 +92,9 @@ def input_fn(mode, datasets, params):
 
     if mode == 'eval':
         dataset = tf.data.Dataset.zip((dataset, datasets[1]))
+
+    dataset = dataset.shuffle(buffer_size=buffer_size)
+    dataset = process_text_line_dataset(dataset, mode, vocab, params)
 
     # Create batches and pad the sentences of different length
     padded_shapes = (
@@ -96,9 +112,9 @@ def input_fn(mode, datasets, params):
         padded_shapes = (padded_shapes, padded_shapes)
 
     dataset = (
-        dataset.shuffle(buffer_size=buffer_size).padded_batch(
+        dataset.padded_batch(
             params.batch_size, padded_shapes=padded_shapes)
-        .prefetch(1)  # make sure you always have one batch ready to serve
+        .prefetch(2)  # make sure you always have one batch ready to serve
     )
 
     # Create initializable iterator from this dataset so that we can reset at each epoch

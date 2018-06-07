@@ -86,15 +86,15 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
-    train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
-    wrong_endings = load_dataset_from_csv(path_wrong_endings, vocab, params)
-    dev_stories1 = load_dataset_from_csv(path_dev_stories_c, vocab, params)
-    dev_stories2 = load_dataset_from_csv(path_dev_stories_w, vocab, params)
-    val_stories1 = load_dataset_from_csv(path_val_stories_c, vocab, params)
-    val_stories2 = load_dataset_from_csv(path_val_stories_w, vocab, params)
+    train_stories = load_dataset_from_csv(path_train_stories)
+    wrong_endings = load_dataset_from_csv(path_wrong_endings)
+    dev_stories1 = load_dataset_from_csv(path_dev_stories_c)
+    dev_stories2 = load_dataset_from_csv(path_dev_stories_w)
+    val_stories1 = load_dataset_from_csv(path_val_stories_c)
+    val_stories2 = load_dataset_from_csv(path_val_stories_w)
 
-    generated = False
-    cheat = True
+    generated = True
+    cheat = False
 
     if generated:
         params.train_size += sum(1 for line in open(path_wrong_endings)) - 1
@@ -113,16 +113,16 @@ if __name__ == '__main__':
     if cheat:
         train_inputs = input_fn('train_including_dev',
                                 [train_stories, dev_stories1, dev_stories2],
-                                params)
+                                vocab, params)
         val_inputs = input_fn(
             'eval', [val_stories1, val_stories2],
-            params)
+            vocab, params)
     else:
-        train_inputs = input_fn('train', [train_stories], params)
+        train_inputs = input_fn('train', [train_stories], vocab, params)
         val_inputs = input_fn('eval', [
             val_stories1.concatenate(dev_stories1),
             val_stories2.concatenate(dev_stories2)
-        ], params)
+        ], vocab, params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)
