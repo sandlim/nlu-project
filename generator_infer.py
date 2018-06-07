@@ -9,7 +9,7 @@ import tensorflow as tf
 
 from model.utils import Params
 from model.utils import set_logger
-from model.evaluation import evaluate
+from model.inference import infer
 from model.generator_input_fn import input_fn
 from model.generator_input_fn import load_dataset_from_csv
 from model.generator_model_fn import model_fn
@@ -79,4 +79,4 @@ model_spec = model_fn('infer', inputs, params)
 logging.info("- done.")
 
 logging.info("Starting evaluation")
-evaluate(model_spec, args.model_dir, params, args.restore_from)
+infer(model_spec, args.model_dir, params, args.restore_from)
