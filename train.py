@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-import os
+import os, shutil
 
 import tensorflow as tf
 
@@ -49,11 +49,20 @@ if __name__ == '__main__':
     num_oov_buckets = params.num_oov_buckets  # number of buckets for unknown words
 
     # Check that we are not overwriting some previous experiment
-    if not args.overwrite:
-        model_dir_has_best_weights = os.path.isdir(
-            os.path.join(args.model_dir, "best_weights"))
-        overwritting = model_dir_has_best_weights and args.restore_dir is None
-        assert not overwritting, "Weights found in model_dir, aborting to avoid overwrite"
+    if args.overwrite:
+        if os.path.isdir(os.path.join(args.model_dir, 'best_weights')):
+            shutil.rmtree(os.path.join(args.model_dir, 'best_weights'))
+        if os.path.isdir(os.path.join(args.model_dir, 'eval_summaries')):
+            shutil.rmtree(os.path.join(args.model_dir, 'eval_summaries'))
+        if os.path.isdir(os.path.join(args.model_dir, 'last_weights')):
+            shutil.rmtree(os.path.join(args.model_dir, 'last_weights'))
+        if os.path.isdir(os.path.join(args.model_dir, 'train_summaries')):
+            shutil.rmtree(os.path.join(args.model_dir, 'train_summaries'))
+
+    model_dir_has_best_weights = os.path.isdir(
+        os.path.join(args.model_dir, "best_weights"))
+    overwritting = model_dir_has_best_weights and args.restore_dir is None
+    assert not overwritting, "Weights found in model_dir, aborting to avoid overwrite"
 
     # Set the logger
     set_logger(os.path.join(args.model_dir, 'train.log'))
