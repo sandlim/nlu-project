@@ -83,6 +83,8 @@ def tokenize(ds):
 
 
 if __name__ == "__main__":
+    nltk.download('punkt')
+
     # Check that the dataset exists
     path_dataset = 'data/train_stories.csv'
     path_dataset_val = 'data/cloze_test_val.csv'
