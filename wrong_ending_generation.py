@@ -2,11 +2,21 @@ import pandas as pd
 import re
 import random
 from collections import Counter
-
+import os
 
 def load_data(path, is_validation=False):
     df = pd.read_csv(path)
     return df
+
+def save_dataset(dataset, save_path):
+    # Create directory if it doesn't exist
+    print("Saving in {}...".format(save_path))
+    if not os.path.exists(os.path.dirname(save_path)):
+        os.makedirs(os.path.dirname(save_path))
+
+    # Export the dataset
+    dataset.to_csv(save_path, index=False)
+    print("- done.")
 
 
 def generate_endings(path, store_path):
@@ -54,7 +64,11 @@ def generate_endings(path, store_path):
             else:
                 word_counts[word] = 1
 
-    stories_w = []
+    stories_w = pd.DataFrame(columns=['sentence1', 'sentence2',
+                                     'sentence3', 'sentence4', 'sentence5',
+                                     'label'])
+
+    index = 0
     for k, v in antonyms.items():
         w1, w2 = (k, v) if word_counts[k] > word_counts[v] else (v, k)
         w1_count, w2_count = (word_counts[w1], word_counts[w2])
@@ -66,44 +80,33 @@ def generate_endings(path, store_path):
         w2_invert_indices = occurences[w2]
         for i in w1_invert_indices:
             story = df.iloc[i]
-            new_story = [
-                story['sentence1'],
-                story['sentence2'],
-                story['sentence3'],
-                story['sentence4'],
-                str(story['sentence5']).replace(w1, w2, 1)
-            ]
-            # print(new_story)
-            stories_w.append(new_story)
+            stories_w.loc[index] = [
+                                    story['sentence1'],
+                                    story['sentence2'],
+                                    story['sentence3'],
+                                    story['sentence4'],
+                                    str(story['sentence5']).replace(w1, w2, 1),
+                                    0
+                                   ]
+            index += 1
         for i in w2_invert_indices:
             story = df.iloc[i]
-            new_story = [
-                story['sentence1'],
-                story['sentence2'],
-                story['sentence3'],
-                story['sentence4'],
-                str(story['sentence5']).replace(w2, w1, 1)
-            ]
-            # print(new_story)
-            stories_w.append(new_story)
+            stories_w.loc[index] = [
+                                    story['sentence1'],
+                                    story['sentence2'],
+                                    story['sentence3'],
+                                    story['sentence4'],
+                                    str(story['sentence5']).replace(w2, w1, 1),
+                                    0
+                                   ]
+            index += 1
 
-    with open(store_path, "w") as f:
-        f.write("sentence1,"
-                "sentence2,"
-                "sentence3,"
-                "sentence4,"
-                "sentence5,"
-                "label"
-                "\n")
-        for story in stories_w:
-            f.write(",".join("\"" + story + "\""))
-            f.write("," + "0")  # label
-            f.write("\n")
+    save_dataset(stories_w,store_path)
 
 
 def main():
     train_path = './data/train_stories.csv'
-    generate_endings(train_path, './data/wrong_endings.txt')
+    generate_endings(train_path, './data/wrong_endings.csv')
 
 
 if __name__ == "__main__":

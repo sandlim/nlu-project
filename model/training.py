@@ -9,6 +9,8 @@ import tensorflow as tf
 from model.utils import save_dict_to_json
 from model.evaluation import evaluate_sess
 
+from load_embeddings import load_embedding
+
 
 def train_sess(sess, model_spec, num_steps, writer, params):
     """Train the model on `num_steps` batches
@@ -75,9 +77,11 @@ def train_and_evaluate(train_model_spec,
         max_to_keep=1)  # only keep 1 best checkpoint (best on eval)
     begin_at_epoch = 0
 
-    with tf.Session() as sess:
+    with tf.Session(config=params.sessConfig) as sess:
         # Initialize model variables
         sess.run(train_model_spec['variable_init_op'])
+
+        load_embedding(sess, params)
 
         # Reload weights from directory if specified
         if restore_from is not None:

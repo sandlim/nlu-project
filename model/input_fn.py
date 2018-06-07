@@ -74,51 +74,23 @@ def input_fn(mode, datasets, params):
     # Zip the sentence and the labels together
     dataset = datasets[0]
     if mode == 'train_including_dev':
-        dataset = dataset.concatenate(datasets[1])  # correct ones
-        dataset = dataset.concatenate(datasets[2])  # wrong ones
+        dataset = dataset.concatenate(datasets[1])  # first ending
+        dataset = dataset.concatenate(datasets[2])  # second ending
 
     if mode == 'eval':
         dataset = tf.data.Dataset.zip((dataset, datasets[1]))
 
-    # TODO: use this to make the creation of the padded_shapes more compact/readable
-    # if params.concat_first_four:
-    #     num_seq_in_story = 2
-    # else:
-    #     num_seq_in_story = 5
-
     # Create batches and pad the sentences of different length
-    if params.concat_first_four:
-        padded_shapes = (
-            {
-                'beg': (
-                    tf.TensorShape([None]),  # sentence 1 - 4 of unknown size
-                    tf.TensorShape([])),  # sequence_length
-                'end': (
-                    tf.TensorShape([None]),  # sentence 5 of unknown size
-                    tf.TensorShape([]))  # sequence_length
-            },
-            tf.TensorShape([]))  # label
-    else:
-        # TODO: does not work yet (have to use dict)
-        padded_shapes = (
-            [
-                (
-                    tf.TensorShape([None]),  # sentence 1 of unknown size
-                    tf.TensorShape([])),  # sequence_length
-                (
-                    tf.TensorShape([None]),  # sentence 2 of unknown size
-                    tf.TensorShape([])),  # sequence_length
-                (
-                    tf.TensorShape([None]),  # sentence 3 of unknown size
-                    tf.TensorShape([])),  # sequence_length
-                (
-                    tf.TensorShape([None]),  # sentence 4 of unknown size
-                    tf.TensorShape([])),  # sequence_length
-                (
-                    tf.TensorShape([None]),  # sentence 5 of unknown size
-                    tf.TensorShape([]))  # sequence_length
-            ],
-            tf.TensorShape([]))  # label
+    padded_shapes = (
+        {
+            'beg': (
+                tf.TensorShape([None]),  # sentence 1 - 4 of unknown size
+                tf.TensorShape([])),  # sequence_length
+            'end': (
+                tf.TensorShape([None]),  # sentence 5 of unknown size
+                tf.TensorShape([]))  # sequence_length
+        },
+        tf.TensorShape([]))  # label
 
     if mode == 'eval':
         padded_shapes = (padded_shapes, padded_shapes)
@@ -137,12 +109,11 @@ def input_fn(mode, datasets, params):
 
     # Build and return a dictionary containing the nodes / ops
     if mode == 'eval':
-        # 1, 0
-        ((story_c, l_c), (story_w, l_w)) = iterator.get_next()
+        ((story1, l1), (story2, l2)) = iterator.get_next()
         inputs = {
-            'story_c': story_c,
-            'story_w': story_w,
-            'label': l_w,
+            'story1': story1,
+            'story2': story2,
+            'label': l2,
             'iterator_init_op': init_op
         }
     else:

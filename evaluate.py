@@ -49,34 +49,47 @@ if __name__ == '__main__':
     # Set the logger
     set_logger(os.path.join(args.model_dir, 'evaluate.log'))
 
+    gpu_options = tf.GPUOptions(allow_growth=True)
+    params.sessConfig = tf.ConfigProto(gpu_options=gpu_options)
+    params.data_dir = args.data_dir
+
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
-    path_val_stories_c = os.path.join(args.data_dir, 'val/stories_c.csv')
-    path_val_stories_w = os.path.join(args.data_dir, 'val/stories_w.csv')
+    path_val_stories1 = os.path.join(args.data_dir, 'val/stories1.csv')
+    path_val_stories2 = os.path.join(args.data_dir, 'val/stories2.csv')
+    path_test_stories1 = os.path.join(args.data_dir, 'test/stories1.csv')
+    path_test_stories2 = os.path.join(args.data_dir, 'test/stories2.csv')
 
     # Load Vocabularies
-    words = tf.contrib.lookup.index_table_from_file(
-        path_words, num_oov_buckets=num_oov_buckets)
-    tags = tf.contrib.lookup.index_table_from_file(path_tags)
+    vocab = tf.contrib.lookup.index_table_from_file(
+        path_vocab, num_oov_buckets=num_oov_buckets)
 
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    val_stories_c = load_dataset_from_csv(path_val_stories_c, vocab, params)
-    val_stories_w = load_dataset_from_csv(path_val_stories_w, vocab, params)
+    val_stories1 = load_dataset_from_csv(path_val_stories1, vocab, params)
+    val_stories2 = load_dataset_from_csv(path_val_stories1, vocab, params)
+    test_stories1 = load_dataset_from_csv(path_test_stories1, vocab, params)
+    test_stories2 = load_dataset_from_csv(path_test_stories2, vocab, params)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.test_size
-    params.id_pad_word = words.lookup(tf.constant(params.pad_word))
-    params.id_pad_tag = tags.lookup(tf.constant(params.pad_tag))
+    params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
-    # Create iterator over the test set
-    inputs = input_fn('eval', test_sentences, test_labels, params)
-    logging.info("- done.")
+    use_val = False
+    if use_val:
+        params.eval_size = params.val_size
+        # Create iterator over the test set
+        inputs = input_fn('eval', [val_stories1, val_stories2], params)
+    else:
+        # Create iterator over the test set
+        inputs = input_fn('eval', [test_stories1, test_stories2], params)
 
-    # Define the model
-    logging.info("Creating the model...")
-    model_spec = model_fn('eval', inputs, params, reuse=False)
-    logging.info("- done.")
+logging.info("- done.")
 
-    logging.info("Starting evaluation")
-    evaluate(model_spec, args.model_dir, params, args.restore_from)
+# Define the model
+logging.info("Creating the model...")
+model_spec = model_fn('eval', inputs, params)
+logging.info("- done.")
+
+logging.info("Starting evaluation")
+evaluate(model_spec, args.model_dir, params, args.restore_from)

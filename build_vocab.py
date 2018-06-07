@@ -68,10 +68,12 @@ if __name__ == '__main__':
     print("Building word vocabulary...")
     counter = Counter()
     size_train_sentences = update_vocab(os.path.join(args.data_dir, 'train/stories.csv'), counter)
-    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories_c.csv'), counter)
-    update_vocab(os.path.join(args.data_dir, 'dev/stories_w.csv'), counter)
-    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories_c.csv'), counter)
-    update_vocab(os.path.join(args.data_dir, 'val/stories_w.csv'), counter)
+    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories1.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'dev/stories2.csv'), counter)
+    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories1.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'val/stories2.csv'), counter)
+    size_test_sentences = update_vocab(os.path.join(args.data_dir, 'test/stories1.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'test/stories2.csv'), counter)
     print("- done.")
 
     # Only keep most frequent tokens
@@ -91,6 +93,7 @@ if __name__ == '__main__':
         'train_size': size_train_sentences,
         'dev_size': size_dev_sentences,
         'eval_size': size_val_sentences,
+        'test_size': size_test_sentences,
         'vocab_size': len(vocab) + NUM_OOV_BUCKETS,
         'pad_word': PAD_WORD,
         'num_oov_buckets': NUM_OOV_BUCKETS

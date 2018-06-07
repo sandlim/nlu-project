@@ -58,13 +58,18 @@ if __name__ == '__main__':
     # Set the logger
     set_logger(os.path.join(args.model_dir, 'train.log'))
 
+    gpu_options = tf.GPUOptions(allow_growth=True)
+    params.sessConfig = tf.ConfigProto(gpu_options=gpu_options)
+    params.data_dir = args.data_dir
+
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
     path_train_stories = os.path.join(args.data_dir, 'train/stories.csv')
-    path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories_c.csv')
-    path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories_w.csv')
-    path_val_stories_c = os.path.join(args.data_dir, 'val/stories_c.csv')
-    path_val_stories_w = os.path.join(args.data_dir, 'val/stories_w.csv')
+    path_wrong_endings = os.path.join(args.data_dir, 'train/stories_generated.csv')
+    path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories1.csv')
+    path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories2.csv')
+    path_val_stories_c = os.path.join(args.data_dir, 'val/stories1.csv')
+    path_val_stories_w = os.path.join(args.data_dir, 'val/stories2.csv')
 
     # Load Vocabularies
     vocab = tf.contrib.lookup.index_table_from_file(
@@ -73,12 +78,17 @@ if __name__ == '__main__':
     # Create the input data pipeline
     logging.info("Creating the datasets...")
     train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
-    dev_stories_c = load_dataset_from_csv(path_dev_stories_c, vocab, params)
-    dev_stories_w = load_dataset_from_csv(path_dev_stories_w, vocab, params)
-    val_stories_c = load_dataset_from_csv(path_val_stories_c, vocab, params)
-    val_stories_w = load_dataset_from_csv(path_val_stories_w, vocab, params)
+    wrong_endings = load_dataset_from_csv(path_wrong_endings, vocab, params)
+    dev_stories1 = load_dataset_from_csv(path_dev_stories_c, vocab, params)
+    dev_stories2 = load_dataset_from_csv(path_dev_stories_w, vocab, params)
+    val_stories1 = load_dataset_from_csv(path_val_stories_c, vocab, params)
+    val_stories2 = load_dataset_from_csv(path_val_stories_w, vocab, params)
 
+    generated = False
     cheat = True
+
+    if generated:
+        params.train_size += sum(1 for line in open(path_wrong_endings)) - 1
     if cheat:
         params.train_size += params.dev_size * 2
     else:
@@ -89,18 +99,20 @@ if __name__ == '__main__':
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
     # Create the iterators over the datasets
+    if generated:
+        train_stories = train_stories.concatenate(wrong_endings)
     if cheat:
         train_inputs = input_fn('train_including_dev',
-                                [train_stories, dev_stories_c, dev_stories_w],
+                                [train_stories, dev_stories1, dev_stories2],
                                 params)
         val_inputs = input_fn(
-            'eval', [val_stories_c, val_stories_w],
+            'eval', [val_stories1, val_stories2],
             params)
     else:
         train_inputs = input_fn('train', [train_stories], params)
         val_inputs = input_fn('eval', [
-            val_stories_c.concatenate(dev_stories_c),
-            val_stories_w.concatenate(dev_stories_w)
+            val_stories1.concatenate(dev_stories1),
+            val_stories2.concatenate(dev_stories2)
         ], params)
     logging.info("- done.")
 

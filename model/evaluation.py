@@ -60,7 +60,7 @@ def evaluate(model_spec, model_dir, params, restore_from):
     # Initialize tf.Saver
     saver = tf.train.Saver()
 
-    with tf.Session() as sess:
+    with tf.Session(config=params.sessConfig) as sess:
         # Initialize the lookup table
         sess.run(model_spec['variable_init_op'])
 

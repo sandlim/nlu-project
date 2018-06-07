@@ -2,17 +2,12 @@
 
 import tensorflow as tf
 
-def rnn_logits(story, params):
-    # Get word embeddings for each token in the sentence
-    embeddings = tf.get_variable(
-        name="embeddings",
-        dtype=tf.float32,
-        shape=[params.vocab_size, params.embedding_size])
+def rnn_logits(story, params, mode):
     length = [
         s[1] for k, s in story.items()
     ]
     story = [
-        tf.nn.embedding_lookup(embeddings, s[0]) for k, s in story.items()
+        tf.nn.embedding_lookup(params.embeddings, s[0]) for k, s in story.items()
     ]
     # story[0] = tf.Print(story[0], [story[0], tf.shape(story[0])], message='story[0]')
     # story[1] = tf.Print(story[1], [story[1], tf.shape(story[1])], message='story[1]')
@@ -20,18 +15,21 @@ def rnn_logits(story, params):
     with tf.variable_scope('lstm-beg'):
         lstm_cell_beg = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
         outputs_beg, _ = tf.nn.dynamic_rnn(
-            lstm_cell_beg, story[0], dtype=tf.float32)
+            lstm_cell_beg, story[0], sequence_length=length[0], dtype=tf.float32)
     with tf.variable_scope('lstm-end'):
         lstm_cell_end = tf.nn.rnn_cell.BasicLSTMCell(params.lstm_num_units)
         outputs_end, _ = tf.nn.dynamic_rnn(
-            lstm_cell_end, story[1], dtype=tf.float32)
-    
-    output_beg = outputs_beg[:,-1]
-    output_end = outputs_end[:,-1]
+            lstm_cell_end, story[1], sequence_length=length[1], dtype=tf.float32)
+
+    output_beg = tf.gather_nd(outputs_beg, tf.stack([tf.range(tf.shape(story[0])[0]), length[0]-1], axis=1))
+    output_end = tf.gather_nd(outputs_end, tf.stack([tf.range(tf.shape(story[1])[0]), length[1]-1], axis=1))
     # output_beg = tf.Print(output_beg, [output_beg, tf.shape(output_beg)], message='\noutput_beg')
     # output_end = tf.Print(output_end, [output_end, tf.shape(output_end)], message='\noutput_end')
     lstm_output = tf.concat([output_beg, output_end], axis=1)
     # lstm_output = tf.Print(lstm_output, [lstm_output, tf.shape(lstm_output)], message='\nlstm_output', summarize=100)
+
+    keep_prob = params.keep_prob if mode=='train' else 1
+    lstm_output = tf.nn.dropout(lstm_output, keep_prob)
 
     with tf.variable_scope('H_layer'):
         output = tf.layers.dense(lstm_output, 256, name='H_output')
@@ -58,16 +56,24 @@ def build_model(mode, inputs, params):
     if mode == 'train':
         story = inputs['story']
     elif mode == 'eval':
-        story_c = inputs['story_c']
-        story_w = inputs['story_w']
+        story1 = inputs['story1']
+        story2 = inputs['story2']
 
     if params.model_version == 'lstm':
+        # Get word embeddings for each token in the sentence
+        embeddings = tf.get_variable(
+            name="embeddings",
+            dtype=tf.float32,
+            shape=[params.vocab_size, params.embedding_size], trainable=False)
+        params.embeddings = embeddings
+
         if mode == 'train':
-            logits = rnn_logits(story, params)
+            logits = rnn_logits(story, params, mode)
         elif mode == 'eval':
-            logits_c = rnn_logits(story_c, params)
-            logits_w = rnn_logits(story_w, params)
-            logits = tf.stack([logits_c[:,1], logits_w[:,1]], axis=1)
+            logits1 = rnn_logits(story1, params, mode)
+            tf.get_variable_scope().reuse_variables()
+            logits2 = rnn_logits(story2, params, mode)
+            logits = tf.stack([logits1[:,1], logits2[:,1]], axis=1)
 
     else:
         raise NotImplementedError("Unknown model version: {}".format(
@@ -104,16 +110,18 @@ def model_fn(mode, inputs, params, reuse=False):
 
     verbose = False
     if is_training and verbose:
-        print("static shape of label:")
-        print(label.shape)
-        input_story_beg = inputs['story']['beg'][0]
-        print("input_story_beg")
-        print(input_story_beg)
-        logits = tf.Print(logits, [input_story_beg, tf.shape(input_story_beg)], message='inputs_story', summarize=200)
-        input_story_end = inputs['story']['end'][0]
-        logits = tf.Print(logits, [input_story_end, tf.shape(input_story_end)], message='inputs_story', summarize=200)
-        logits = tf.Print(logits, [logits, tf.shape(logits)], message='logits', summarize=200)
-        label = tf.Print(label, [label, tf.shape(label)], message='label')
+        # print("static shape of label:")
+        # print(label.shape)
+        # input_story_beg = inputs['story']['beg'][0]
+        # print("input_story_beg")
+        # print(input_story_beg)
+        # logits = tf.Print(logits, [input_story_beg, tf.shape(input_story_beg)], message='inputs_story', summarize=200)
+        # input_story_end = inputs['story']['end'][0]
+        # logits = tf.Print(logits, [input_story_end, tf.shape(input_story_end)], message='inputs_story', summarize=200)
+        # logits = tf.Print(logits, [logits, tf.shape(logits)], message='logits', summarize=200)
+        label = tf.Print(label, [label, tf.shape(label), tf.reduce_sum(label)], message='label')
+        prediction = tf.Print(prediction, [prediction, tf.shape(prediction), tf.reduce_sum(prediction)], message='prediction')
+
 
     # Define loss and accuracy (we need to apply a mask to account for padding)
     raw_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
