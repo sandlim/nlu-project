@@ -1,12 +1,23 @@
 import pandas as pd
+import argparse
 import re
 import random
 from collections import Counter
 import os
 
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    '--generation_method',
+    default='shuffle',
+    help="method used to generate wrong endings (shuffle, antonyms, both)")
+
+
 def load_data(path, is_validation=False):
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, usecols=[
+                         'sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5'
+                     ])
     return df
+
 
 def save_dataset(dataset, save_path):
     # Create directory if it doesn't exist
@@ -19,11 +30,10 @@ def save_dataset(dataset, save_path):
     print("- done.")
 
 
-def generate_endings(path, store_path):
+def generate_endings_using_antomyms(df):
     word_counts = Counter()
-    df = load_data(path)
     antonyms = dict([
-        ("day", "night"),
+        # ("day", "night"),
         ("was", "wasn't"),
         ("will", "won't"),
         ("did", "didn't"),
@@ -101,12 +111,32 @@ def generate_endings(path, store_path):
                                    ]
             index += 1
 
-    save_dataset(stories_w,store_path)
+    return stories_w
+
+
+def generate_endings_shuffle(df: pd.DataFrame):
+    df_new = df.copy()
+    indices = list(range(0, len(df)))
+    random.shuffle(indices)
+    for i in range(0, len(df)):
+        df_new.iloc[i]['sentence5'] = df.iloc[indices[i]]['sentence5']
+    df_new['label'] = 0
+    return df_new
 
 
 def main():
     train_path = './data/train_stories.csv'
-    generate_endings(train_path, './data/wrong_endings.csv')
+    df_train = load_data(train_path)
+    args = parser.parse_args()
+    if args.generation_method == 'antonyms':
+        df = generate_endings_using_antomyms(df_train)
+    if args.generation_method == 'shuffle':
+        df = generate_endings_shuffle(df_train)
+    if args.generation_method == 'both':
+        df1 = generate_endings_using_antomyms(df_train)
+        df2 = generate_endings_shuffle(df_train)
+        df = df1.append(df2)
+    save_dataset(df, './data/wrong_endings.csv')
 
 
 if __name__ == "__main__":
