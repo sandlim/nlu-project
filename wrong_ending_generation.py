@@ -116,10 +116,11 @@ def generate_endings_using_antomyms(df):
 
 def generate_endings_shuffle(df: pd.DataFrame):
     df_new = df.copy()
-    indices = list(range(0, len(df)))
-    random.shuffle(indices)
-    for i in range(0, len(df)):
-        df_new.iloc[i]['sentence5'] = df.iloc[indices[i]]['sentence5']
+    indices = list(range(len(df)))
+    while any([e == i for e, i in enumerate(indices)]):
+        random.shuffle(indices)
+    for i, ind in enumerate(indices):
+        df_new.iloc[i]['sentence5'] = df.iloc[ind]['sentence5']
     df_new['label'] = 0
     return df_new
 
