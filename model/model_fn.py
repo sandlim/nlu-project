@@ -136,7 +136,11 @@ def model_fn(mode, inputs, params, reuse=False):
     if is_training:
         optimizer = tf.train.AdamOptimizer(params.learning_rate)
         global_step = tf.train.get_or_create_global_step()
-        train_op = optimizer.minimize(loss, global_step=global_step)
+        # train_op = optimizer.minimize(loss, global_step=global_step)
+        # clipping
+        gradients, variables = zip(*optimizer.compute_gradients(loss))
+        gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+        train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=global_step)
 
     # -----------------------------------------------------------
     # METRICS AND SUMMARIES
