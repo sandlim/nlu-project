@@ -73,10 +73,20 @@ for i in range(len(train_dat['wsentence5'])):
     train_dat['wsentence5'][i] = negateSentence(train_dat['sentence5'][i])
 
 
+train_dat['w2sentence5'] = train_dat['wsentence5']
+
+for i in range(len(train_dat['w2sentence5'])):
+    train_dat['w2sentence5'][i]= train_dat['w2sentence5'][i].lstrip()
+    if train_dat['w2sentence5'][i].replace(' .','.').replace(' ,',',') == train_dat['sentence5'][i]:
+        train_dat['w2sentence5'][i] = train_dat['sentence5'][i].replace('.','')  + " not."
+    else:
+        train_dat['wsentence5'][i] == train_dat['wsentence5'][i]
+
+
 choice = pd.DataFrame(columns=['Option1','Option2'])
 
 choice["Option1"] = train_dat["sentence5"]
-choice["Option2"] = train_dat["wsentence5"]
+choice["Option2"] = train_dat["w2sentence5"]
 
 choice = choice.values
 #choice.shape (88161, 2)
@@ -90,4 +100,4 @@ train_dat["Option2"] = choice["Option2"]
 
 train_dat["Correct"] = np.where(train_dat['Option1']==train_dat['sentence5'], '1', '2')
 
-train_dat.to_csv("./data/train_dat_wrongchoice.csv", sep=',', encoding='utf-8',index = False)
+train_dat.to_csv("./data/train_dat_wrongchoice_not.csv", sep=',', encoding='utf-8',index = False)
