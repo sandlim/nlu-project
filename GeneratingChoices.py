@@ -100,4 +100,4 @@ train_dat["Option2"] = choice["Option2"]
 
 train_dat["Correct"] = np.where(train_dat['Option1']==train_dat['sentence5'], '1', '2')
 
-train_dat.to_csv("./data/train_dat_wrongchoice_not.csv", sep=',', encoding='utf-8',index = False)
+train_dat.to_csv("./data/train_dat_wrongchoice.csv", sep=',', encoding='utf-8',index = False)
