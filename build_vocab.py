@@ -17,6 +17,8 @@ parser.add_argument('--data_dir', default='data/dev_split', help="Directory cont
 # Hyper parameters for the vocab
 NUM_OOV_BUCKETS = 1 # number of buckets (= number of ids) for unknown words
 PAD_WORD = '<pad>'
+BOS_WORD = '<bos>'
+OOV_WORD = '<oov>'
 
 
 def save_vocab_to_txt_file(vocab, txt_path):
@@ -79,9 +81,8 @@ if __name__ == '__main__':
     # Only keep most frequent tokens
     vocab = [tok for tok, count in counter.items() if count >= args.min_count_word]
 
-    # Add pad tokens
-    if PAD_WORD not in vocab:
-        vocab = [PAD_WORD] + vocab
+    # Add pad and bos tokens
+    vocab = [PAD_WORD, BOS_WORD] + vocab
 
     # Save vocabularies to file
     print("Saving vocabularies to file...")
@@ -96,6 +97,8 @@ if __name__ == '__main__':
         'test_size': size_test_sentences,
         'vocab_size': len(vocab) + NUM_OOV_BUCKETS,
         'pad_word': PAD_WORD,
+        'bos_word': BOS_WORD,
+        'oov_word': OOV_WORD,
         'num_oov_buckets': NUM_OOV_BUCKETS
     }
     save_dict_to_json(sizes, os.path.join(args.data_dir, 'dataset_params.json'))
