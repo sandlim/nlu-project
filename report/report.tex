@@ -45,7 +45,7 @@ The training set of the story cloze test comes with only positive sample (i.e. s
 
 \subsection{Wrong ending generation}
 
-\subsubsection{Shuffelling} According past publications\cite{top4}, permuting the correct endings of the training stories produce reasonable wrong endings. In our implementation we make sure to use a derangement, i.e. a permutation where no element stays in place. Otherwise we correct endings could appear as negative samples.
+\subsubsection{Shuffelling} According past publications\cite{top4}, permuting the correct endings of the training stories produce reasonable wrong endings. In our implementation we make sure to use a derangement, i.e. a permutation where no element stays in place. Otherwise the correct endings could appear as negative samples.
 
 \subsubsection{Simple antonyms and negation}
 

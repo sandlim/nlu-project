@@ -6,10 +6,14 @@ Credits to Guillaume Genthial and Olivier Moindrot
 ./setup.sh
 ```
 
-## Usage
+## Generate our final model:
 First generate wrong endings as follows:
 ```
 python wrong_endings_generation.py --generation_method <method>
+```
+wrong_ending_generation_antonyms.py
+wrong_ending_generation_antonyms_nltk.py
+wrong_ending_generation_shuffle.py
 ```
 
 Then:
