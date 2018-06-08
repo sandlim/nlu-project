@@ -84,6 +84,7 @@ def tokenize(ds):
 
 if __name__ == "__main__":
     nltk.download('punkt')
+    np.random.seed(14)
 
     # Check that the dataset exists
     path_dataset = 'data/train_stories.csv'
