@@ -2,19 +2,32 @@ We started with the skeleton from https://github.com/cs230-stanford/cs230-code-e
 Credits to Guillaume Genthial and Olivier Moindrot
 
 ## Setup
+virtualenv needs to be available.
 ```
 ./setup.sh
 ```
 
-## Usage
-First generate wrong endings as follows:
+## Preparation
+First generate wrong endings as follows (execute this for all methods):
 ```
-python wrong_endings_generation.py --generation_method <method>
+python wrong_endings_generation_<generation-method>.py
 ```
 
 Then:
 ```
 python build_dataset.py
 python build_vocab.py
-python train.py
 ```
+
+
+## Steps to reach out final model
+
+Execute in order:
+```
+python generator_pretrain.py --overwrite
+python generator_train.py --overwrite --restore_dir experiments/generator_pre-model/best_weights
+python generator_infer.py
+python train.py --overwrite
+python infer.py  
+```
+
