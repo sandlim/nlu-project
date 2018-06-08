@@ -8,7 +8,9 @@ Credits to Guillaume Genthial and Olivier Moindrot
 
 ## Usage
 First generate wrong endings as follows:
-TODO
+```
+python wrong_endings_generation.py --generation_method <method>
+```
 
 Then:
 ```
