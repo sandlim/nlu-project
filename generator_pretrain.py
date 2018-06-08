@@ -27,7 +27,13 @@ parser.add_argument(
     default=None,
     help="Optional, directory containing weights to reload before training")
 parser.add_argument(
-    '--overwrite', dest='overwrite', default=True, action='store_true')
+    '--overwrite', dest='overwrite', default=False, action='store_true')
+parser.add_argument(
+    '--use_shuffled', dest='use_shuffled', default=False, action='store_true')
+parser.add_argument(
+    '--use_antonym_simple', dest='use_antonym_simple', default=False, action='store_true')
+parser.add_argument(
+    '--use_antonym_nltk', dest='use_antonym_nltk', default=False, action='store_true')
 
 if __name__ == '__main__':
     # Set the random seed for the whole graph for reproductible experiments
@@ -74,7 +80,9 @@ if __name__ == '__main__':
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
     path_train_stories = os.path.join(args.data_dir, 'train/stories.csv')
-    path_wrong_endings = os.path.join(args.data_dir, 'train/stories_generated.csv')
+    path_shuffled_endings = os.path.join(args.data_dir, 'train/shuffled_endings.csv')
+    path_antonym_endings_simple = os.path.join(args.data_dir, 'train/antonym_endings_simple.csv')
+    path_antonym_endings_nltk = os.path.join(args.data_dir, 'train/antonym_endings_nltk.csv')
     path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories1.csv')
     path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories2.csv')
     path_val_stories_c = os.path.join(args.data_dir, 'val/stories1.csv')
@@ -87,17 +95,24 @@ if __name__ == '__main__':
     # Create the input data pipeline
     logging.info("Creating the datasets...")
     train_stories = load_dataset_from_csv(path_train_stories)
-    wrong_endings = load_dataset_from_csv(path_wrong_endings)
+    shuffled_endings = load_dataset_from_csv(path_shuffled_endings)
+    antonym_endings_simple = load_dataset_from_csv(path_antonym_endings_simple)
+    antonym_endings_nltk = load_dataset_from_csv(path_antonym_endings_nltk)
     dev_stories1 = load_dataset_from_csv(path_dev_stories_c)
     dev_stories2 = load_dataset_from_csv(path_dev_stories_w)
     val_stories1 = load_dataset_from_csv(path_val_stories_c)
     val_stories2 = load_dataset_from_csv(path_val_stories_w)
 
 
-    generated = False
-    if generated:
-        params.train_size += sum(1 for line in open(path_wrong_endings)) - 1
-        train_stories = train_stories.concatenate(wrong_endings)
+    if args.use_shuffled:
+        params.train_size += sum(1 for line in open(path_shuffled_endings)) - 1
+        train_stories = train_stories.concatenate(shuffled_endings)
+    if args.use_antonym_simple:
+        params.train_size += sum(1 for line in open(path_antonym_endings_simple)) - 1
+        train_stories = train_stories.concatenate(antonym_endings_simple)
+    if args.use_antonym_nltk:
+        params.train_size += sum(1 for line in open(path_antonym_endings_nltk)) - 1
+        train_stories = train_stories.concatenate(antonym_endings_nltk)
 
     # Specify other parameters for the dataset and the model
     params.buffer_size = params.train_size  # buffer size for shuffling

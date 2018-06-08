@@ -27,7 +27,7 @@ parser.add_argument(
     default=None,
     help="Optional, directory containing weights to reload before training")
 parser.add_argument(
-    '--overwrite', dest='overwrite', default=True, action='store_true')
+    '--overwrite', dest='overwrite', default=False, action='store_true')
 
 if __name__ == '__main__':
     # Set the random seed for the whole graph for reproductible experiments
