@@ -5,6 +5,7 @@ from nltk.tokenize import word_tokenize
 import nltk.data
 from nltk.stem.wordnet import WordNetLemmatizer
 
+
 def get_antonyms(input_lemma):
     antonyms = []
     for syn in wn.synsets(input_lemma):
@@ -64,48 +65,30 @@ def negateSentence(sentence):
         output = output + " " + new_word
     return output
 
-#load the data
-train_dat = pd.read_csv('./data/train_stories.csv')
 
-#generate wrong sentences
+# load the data
+train_dat = pd.read_csv('./data/train_stories.csv', usecols=[
+    'sentence1', 'sentence2', 'sentence3', 'sentence4',
+    'sentence5'
+])
+
+# generate wrong sentences
 train_dat['wsentence5'] = train_dat['sentence5']
 for i in range(len(train_dat['wsentence5'])):
     train_dat['wsentence5'][i] = negateSentence(train_dat['sentence5'][i])
 
-#check the generated wrong sentences are all negated. Sometimes NLTK cannot identify verb correctly=> add not.
+# check the generated wrong sentences are all negated. Sometimes NLTK cannot identify verb correctly=> add not.
 train_dat['w2sentence5'] = train_dat['wsentence5']
 
 for i in range(len(train_dat['w2sentence5'])):
-    train_dat['w2sentence5'][i]= train_dat['w2sentence5'][i].lstrip()
-    if train_dat['w2sentence5'][i].replace(' .','.').replace(' ,',',') == train_dat['sentence5'][i]:
-        train_dat['w2sentence5'][i] = train_dat['sentence5'][i].replace('.','')  + " not."
+    train_dat['w2sentence5'][i] = train_dat['w2sentence5'][i].lstrip()
+    if train_dat['w2sentence5'][i].replace(' .', '.').replace(' ,', ',') == train_dat['sentence5'][i]:
+        train_dat['wsentence5'][i] = train_dat['sentence5'][i].replace('.', '') + " not."
     else:
-        train_dat['wsentence5'][i] == train_dat['wsentence5'][i]
+        train_dat['sentence5'] = train_dat['wsentence5']
 
-#create two choices: randomize s5 and w2s5
-choice = pd.DataFrame(columns=['RandomFifthSentenceQuiz1','RandomFifthSentenceQuiz2'])
-
-choice["RandomFifthSentenceQuiz1"] = train_dat["sentence5"]
-choice["RandomFifthSentenceQuiz2"] = train_dat["w2sentence5"]
-
-np.random.seed(37)
-
-choice = choice.values
-#choice.shape (88161, 2)
-
-_ = [np.random.shuffle(i) for i in choice]
-
-choice = pd.DataFrame(choice,
-                      columns=['RandomFifthSentenceQuiz1','RandomFifthSentenceQuiz2'])
-
-train_dat["RandomFifthSentenceQuiz1"] = choice["RandomFifthSentenceQuiz1"]
-train_dat["RandomFifthSentenceQuiz2"] = choice["RandomFifthSentenceQuiz2"]
-
-train_dat["AnswerRightEnding"] = np.where(train_dat['RandomFifthSentenceQuiz1']==train_dat['sentence5'], '1', '2')
-
-
-del train_dat['sentence5']
-del train_dat['wsentence5']
 del train_dat['w2sentence5']
+del train_dat['wsentence5']
+train_dat['label'] = 0
 
-train_dat.to_csv("./data/wrong_ending_generation_nltk.csv", sep=',', encoding='utf-8',index = False)
+train_dat.to_csv("./data/wrong_endings_nltk.csv", sep=',', encoding='utf-8', index=False)
