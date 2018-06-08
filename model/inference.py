@@ -29,7 +29,9 @@ def inference_sess(sess, model_spec, num_steps, writer=None, params=None):
 
     # compute metrics over the dataset
     batch_predictions = []
-    for _ in range(num_steps):
+    for i in range(num_steps):
+        if i%50 == 0:
+            print('batch {}'.format(i))
         batch_predictions.append(sess.run(predictions))
     return batch_predictions
 
@@ -61,4 +63,4 @@ def infer(model_spec, model_dir, params, restore_from):
         num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
         batch_pred = inference_sess(sess, model_spec, num_steps)
 
-    np.concatenate(batch_pred)
+    return batch_pred
