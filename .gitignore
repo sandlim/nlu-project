@@ -5,7 +5,8 @@ vocab/*
 results/*
 !vocab/.gitkeep
 experiments/*
-!experiments/.gitkeep
+!*/.gitkeep
+!experiments/*/params.json
 **/*.swp
 .idea/
 
