@@ -8,14 +8,19 @@ import sys
 import pandas as pd
 import re
 
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--min_count_word', default=3, help="Minimum count for words in the dataset",
-                    type=int)
-parser.add_argument('--data_dir', default='data/dev_split', help="Directory containing the dataset")
+parser.add_argument(
+    '--min_count_word',
+    default=3,
+    help="Minimum count for words in the dataset",
+    type=int)
+parser.add_argument(
+    '--data_dir',
+    default='data/dev_split',
+    help="Directory containing the dataset")
 
 # Hyper parameters for the vocab
-NUM_OOV_BUCKETS = 1 # number of buckets (= number of ids) for unknown words
+NUM_OOV_BUCKETS = 1  # number of buckets (= number of ids) for unknown words
 PAD_WORD = '<pad>'
 BOS_WORD = '<bos>'
 OOV_WORD = '<oov>'
@@ -69,17 +74,27 @@ if __name__ == '__main__':
     # Build word vocab with train and test datasets
     print("Building word vocabulary...")
     counter = Counter()
-    size_train_sentences = update_vocab(os.path.join(args.data_dir, 'train/stories.csv'), counter)
-    size_dev_sentences = update_vocab(os.path.join(args.data_dir, 'dev/stories1.csv'), counter)
+    size_train_sentences = update_vocab(
+        os.path.join(args.data_dir, 'train/stories.csv'), counter)
+    size_dev_sentences = update_vocab(
+        os.path.join(args.data_dir, 'dev/stories1.csv'), counter)
     update_vocab(os.path.join(args.data_dir, 'dev/stories2.csv'), counter)
-    size_val_sentences = update_vocab(os.path.join(args.data_dir, 'val/stories1.csv'), counter)
+    size_val_sentences = update_vocab(
+        os.path.join(args.data_dir, 'val/stories1.csv'), counter)
     update_vocab(os.path.join(args.data_dir, 'val/stories2.csv'), counter)
-    size_test_sentences = update_vocab(os.path.join(args.data_dir, 'test/stories1.csv'), counter)
-    update_vocab(os.path.join(args.data_dir, 'test/stories2.csv'), counter)
+    size_test_sentences = update_vocab(
+        os.path.join(args.data_dir, 'test/stories1.csv'), counter)
+    update_vocab(os.path.join(args.data_dir, 'val/stories2.csv'), counter)
+    size_test_nlu18_sentences = update_vocab(
+        os.path.join(args.data_dir, 'test_nlu18/stories1.csv'), counter)
+    update_vocab(
+        os.path.join(args.data_dir, 'test_nlu18/stories2.csv'), counter)
     print("- done.")
 
     # Only keep most frequent tokens
-    vocab = [tok for tok, count in counter.items() if count >= args.min_count_word]
+    vocab = [
+        tok for tok, count in counter.items() if count >= args.min_count_word
+    ]
 
     # Add pad and bos tokens
     vocab = [PAD_WORD, BOS_WORD] + vocab
@@ -95,13 +110,15 @@ if __name__ == '__main__':
         'dev_size': size_dev_sentences,
         'eval_size': size_val_sentences,
         'test_size': size_test_sentences,
+        'test_nlu18_size': size_test_nlu18_sentences,
         'vocab_size': len(vocab) + NUM_OOV_BUCKETS,
         'pad_word': PAD_WORD,
         'bos_word': BOS_WORD,
         'oov_word': OOV_WORD,
         'num_oov_buckets': NUM_OOV_BUCKETS
     }
-    save_dict_to_json(sizes, os.path.join(args.data_dir, 'dataset_params.json'))
+    save_dict_to_json(sizes, os.path.join(args.data_dir,
+                                          'dataset_params.json'))
 
     # Logging sizes
     to_print = "\n".join("- {}: {}".format(k, v) for k, v in sizes.items())

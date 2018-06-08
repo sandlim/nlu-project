@@ -6,7 +6,7 @@ import nltk
 import numpy as np
 
 
-def load_dataset(path_csv, is_validation=False, generated=False):
+def load_dataset(path_csv, is_validation=False, generated=False, is_test=False):
     """Loads dataset into memory from csv file"""
 
     if is_validation:
@@ -39,7 +39,36 @@ def load_dataset(path_csv, is_validation=False, generated=False):
                 row['AnswerRightEnding'] - 1
             ]
         return df1, df2
-
+    elif is_test:
+        val_df = pd.read_csv(
+            path_csv,
+            usecols=[
+                'InputSentence1', 'InputSentence2', 'InputSentence3',
+                'InputSentence4', 'RandomFifthSentenceQuiz1',
+                'RandomFifthSentenceQuiz2'
+            ])
+        df1 = pd.DataFrame(columns=[
+            'sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5',
+            'label'
+        ])
+        df2 = pd.DataFrame(columns=[
+            'sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5',
+            'label'
+        ])
+        for index, row in val_df.iterrows():
+            first_ending = row['RandomFifthSentenceQuiz1']
+            second_ending = row['RandomFifthSentenceQuiz2']
+            df1.loc[index] = [
+                row['InputSentence1'], row['InputSentence2'],
+                row['InputSentence3'], row['InputSentence4'], first_ending,
+                0
+            ]
+            df2.loc[index] = [
+                row['InputSentence1'], row['InputSentence2'],
+                row['InputSentence3'], row['InputSentence4'], second_ending,
+                0
+            ]
+        return df1, df2
     else:
         if generated:
             df = pd.read_csv(
@@ -90,6 +119,7 @@ if __name__ == "__main__":
     path_dataset = 'data/train_stories.csv'
     path_dataset_val = 'data/cloze_test_val.csv'
     path_dataset_test = 'data/cloze_test_spring2016-test.csv'
+    path_dataset_test_nlu18 = 'data/test_nlu18.csv'
     path_dataset_generated = 'data/wrong_endings.csv'
     msg = "{} file not found. Make sure you have downloaded the right dataset".format(
         path_dataset)
@@ -108,6 +138,9 @@ if __name__ == "__main__":
     dataset_test1, dataset_test2 = load_dataset(
         path_dataset_test, is_validation=True)
     print("- loaded (and rearranged) test set.")
+    dataset_test_nlu18_1, dataset_test_nlu18_2 = load_dataset(
+        path_dataset_test, is_test=True)
+    print("- loaded (and rearranged) test_nlu18 set.")
     dataset_generated = load_dataset(path_dataset_generated, generated=True)
     print("- loaded generated stories.")
     print("- done.")
@@ -120,6 +153,9 @@ if __name__ == "__main__":
     dataset_test1 = tokenize(dataset_test1)
     dataset_test2 = tokenize(dataset_test2)
     print("- tokenized test set.")
+    dataset_test_nlu18_1 = tokenize(dataset_test_nlu18_1)
+    dataset_test_nlu18_2 = tokenize(dataset_test_nlu18_2)
+    print("- tokenized test_nlu18 set.")
     train_dataset = tokenize(train_dataset)
     print("- tokenized training set.")
     dataset_generated = tokenize(dataset_generated)
@@ -154,3 +190,7 @@ if __name__ == "__main__":
                  os.path.join('data', 'dev_split', 'test', 'stories1.csv'))
     save_dataset(dataset_test2,
                  os.path.join('data', 'dev_split', 'test', 'stories2.csv'))
+    save_dataset(dataset_test_nlu18_1,
+                 os.path.join('data', 'dev_split', 'test_nlu18', 'stories1.csv'))
+    save_dataset(dataset_test_nlu18_2,
+                 os.path.join('data', 'dev_split', 'test_nlu18', 'stories2.csv'))
