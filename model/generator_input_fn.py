@@ -37,7 +37,7 @@ def process_text_line_dataset(dataset, mode, vocab, params):
         label = fields[-1]
         return features, label
 
-    if mode != 'infer':
+    if mode != 'infer' and mode != 'pre-train':
         dataset = dataset.map(lambda l1, l2: (_parse_line(l1), _parse_line(l2)))
     else:
         dataset = dataset.map(_parse_line)
@@ -56,7 +56,7 @@ def process_text_line_dataset(dataset, mode, vocab, params):
     apply_split = lambda x1, x2: ({k: _split(s) for k, s in x1.items()}, x2)
     apply_vocabularize = lambda x1, x2: ({k: _vocabularize(s) for k, s in x1.items()}, x2)
 
-    if mode != 'infer':
+    if mode != 'infer' and mode != 'pre-train':
         dataset = dataset.map(lambda l1, l2: (apply_split(*l1), apply_split(*l2)))
         dataset = dataset.map(lambda l1, l2: (apply_vocabularize(*l1), apply_vocabularize(*l2)))
     else:
@@ -78,20 +78,23 @@ def input_fn(mode, datasets, vocab, params):
 
     """
     # Load all the dataset in memory for shuffling is training
-    is_training = (mode == 'train' or mode == 'train_including_dev')
+    is_training = (mode == 'train' or mode == 'pre-train')
     buffer_size = params.buffer_size if is_training else 1
 
     # Zip the sentence and the labels together
     dataset = datasets[0]
 
-    if mode != 'infer':
+    if mode != 'infer' and mode != 'pre-train':
         dataset = tf.data.Dataset.zip((dataset, datasets[1]))
+    if is_training:
         dataset = dataset.shuffle(buffer_size=buffer_size)
 
     dataset = process_text_line_dataset(dataset, mode, vocab, params)
 
-    if mode != 'infer':
+    if mode == 'train' or mode == 'eval':
         dataset = dataset.map(lambda l1, l2: tf.cond(tf.squeeze(tf.equal(l1[1], tf.constant([0]))), lambda: l1, lambda: l2))
+    elif mode == 'pre-eval':
+        dataset = dataset.map(lambda l1, l2: tf.cond(tf.squeeze(tf.equal(l1[1], tf.constant([0]))), lambda: l2, lambda: l1))
 
     # Create batches and pad the sentences of different length
     padded_shapes = (

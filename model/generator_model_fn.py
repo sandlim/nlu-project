@@ -49,10 +49,11 @@ def build_model(mode, inputs, params):
         outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder)
         logits = outputs.rnn_output
     else:
+        print(encoder_state)
         # Helper
         helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-            tf.transpose(embeddings),
-            tf.fill([tf.shape(encoder_outputs)[0]], 0), 14)
+            embeddings,
+            tf.fill([tf.shape(encoder_outputs)[0]], 0), 13)
         # Decoder
         decoder = tf.contrib.seq2seq.BasicDecoder(
             lstm_cell_end, helper, encoder_state,
@@ -106,7 +107,7 @@ def model_fn(mode, inputs, params, reuse=False):
         losses = tf.boolean_mask(raw_loss, mask)
         loss = tf.reduce_mean(losses)
         perplexity = tf.exp(loss)
-        accuracy = tf.reduce_mean(tf.cast(tf.equal(label, prediction), tf.float32))
+        accuracy = tf.reduce_mean(tf.boolean_mask(tf.cast(tf.equal(label, prediction), tf.float32), mask))
 
         # Define training step that minimizes the loss with the Adam optimizer
         if is_training:
@@ -124,7 +125,7 @@ def model_fn(mode, inputs, params, reuse=False):
         with tf.variable_scope("metrics"):
             metrics = {
                 'accuracy':
-                tf.metrics.accuracy(labels=label, predictions=prediction),
+                tf.metrics.mean(accuracy),
                 'perplexity':
                 tf.metrics.mean(tf.exp(loss)),
                 'loss':
