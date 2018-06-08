@@ -45,7 +45,7 @@ The training set of the story cloze test comes with only positive sample (i.e. s
 
 \subsection{Wrong ending generation}
 
-\subsubsection{Shuffelling} According past publications\cite{top4}, permuting the correct endings of the training stories produce reasonable wrong endings. In our implementation we make sure to use a derangement, i.e. a permutation where no element stays in place. Otherwise we correct endings could appear as negative samples.
+\subsubsection{Shuffling} According past publications\cite{top4}, permuting the correct endings of the training stories produce reasonable wrong endings. In our implementation we make sure to use a derangement, i.e. a permutation where no element stays in place. Otherwise we correct endings could appear as negative samples.
 
 \subsubsection{Simple antonyms and negation}
 
@@ -61,7 +61,7 @@ Kelly quickly went home." There are at least two possibilities of negation: "Kel
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.7 \linewidth]{fig/wrong.PNG}
+  \includegraphics[width=0.7 \linewidth]{fig/wrong.png}
   \caption{Our apporach to generate wrong endings}
   \label{Figure:wrong}
 \end{figure}
@@ -108,12 +108,20 @@ There are two main limitations of our model to generate wrong endings. First, is
 
 Second is that our generated wrong endings may have high occurance of the word "not" as our model was designed to insert "not" in the absence of antonyms. This would affect our classifier performance negatively.
 
-\subsection{Generating wrong endings with seq2seq}
-We adapted the neural machine translation tutorial on Tensorflow which made use of seq2seq models \cite{tfseq2seq}. Sequence2sequence model consists of two RNNs: encoder and decoder, which reads the  input sequence to infer semantic summary and generates output sequence respectively. Our method starts with training the model on true endings of the train dataset. Then we did a post-training on 80\% of the wrong endings of validation set. We included validation set in our training model because doing so further impoves the ability of our model to generate wrong endings.
+\subsection{Generating wrong endings with a seq2seq model}
+We constructed a simple seq2seq model following \cite{tfseq2seq}. The sequence to sequence model consists of two RNNs: an encoder, which reads the input sequence to infer semantics, and a decoder, which generates an output sequence respectively.
 
+We trained the model on 80\% of the validation set. The input sequence is the concatenation of the first four sentences of each story, while the ground truth output sequence is the wrong ending to the story.
+
+In order to be able to train on such a small dataset, pre-training on the training set was performed. This gives the seq2seq model a better understanding of the underlying language.
+
+Because this method uses a portion of the validation set, one could think of instead directly training the classifier on the validation set. 
+While a classifier trained directly on the validation set would require an increase in labelled data to improve its performance, our approach can simply generate more wrong endings for potentially unlimited amounts of only semi-labelled data. This is a great advantage, as stories with their right ending are typically more readily available that stories with a corresponding wrong ending.
+
+As can be seen in the results section the generation with the seq2seq model outperforms the other generation methods.
 
 \subsubsection{Limitations}
-
+The sequence to sequence model is currently very simple, restricting its learning capabilities. This means that there is ample room for improvement in this method.
 
 \section{Model: Classifier}
 
@@ -123,7 +131,7 @@ Firstly, we looked up the word embedding of each word in vector space for each s
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.5 \linewidth]{fig/ourmodel.PNG}
+  \includegraphics[width=0.5 \linewidth]{fig/ourmodel.png}
   \caption{Our classifier}
   \label{Figure:model}
 \end{figure}
