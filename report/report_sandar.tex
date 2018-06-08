@@ -22,10 +22,10 @@
 
 
 % Choose a title for your submission
-\title{Your title here}
+\title{Tackling Story Cloze Test with Wrong Ending Generation}
 
 
-\author{Student 1 \qquad Student 2 \qquad Sandar Felicity Lim}
+\author{Pascal Wiesmann \qquad Stefano Woerner \qquad Sandar Felicity Lim}
 %\graphicspath{{fig/}}
 \begin{document}
 % \nipsfinalcopy is no longer used
@@ -108,7 +108,8 @@ We adapted the neural machine translation tutorial on Tensorflow which made use 
 
 Figure \ref{Figure:model} shows the architecture of our model. This is similar to the approach by Burgert et al. except for a few differences \cite{top4}. Our model involves two Long Short-Term Memory (LSTM) units to compute the feature representation of each sentence \citep{lstm}, instead of one Bidirectional Recurrent Neural Network (BiLSTM).
 
-Firstly, we looked up the word embedding of each word of each story. 
+Firstly, we looked up the word embedding of each word in vector space for each sentence. The embeddings from the first four sentences were then passed on to the first LSTM which summarises the story in numbers. Likewise, the last sentence was passed on to the second LSTM. The results of two LSTMs are then concatenated as a string and passed on to a dense layer. The classifier trains on where the ending is relevant to the story or not.
+
 \begin{figure}
   \centering
   \includegraphics[width=0.5 \linewidth]{fig/ourmodel.PNG}
