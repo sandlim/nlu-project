@@ -113,5 +113,6 @@ if __name__ == '__main__':
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
+
     train_and_evaluate(train_model_spec, eval_model_spec, args.model_dir,
-                       params, args.restore_dir)
+                           params, args.restore_dir)

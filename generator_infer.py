@@ -1,4 +1,5 @@
 """Evaluate the model"""
+from itertools import takewhile
 
 import argparse
 import logging
@@ -62,7 +63,8 @@ if __name__ == '__main__':
     vocab = tf.contrib.lookup.index_table_from_file(
         path_vocab, num_oov_buckets=num_oov_buckets)
 
-    vocab_back = open(path_vocab, 'r').read().splitlines()
+    vocab_back = open(path_vocab, 'r').read().splitlines() + [params.oov_word]
+    params.vocab_back = vocab_back
 
     # Create the input data pipeline
     logging.info("Creating the dataset...")
@@ -88,8 +90,8 @@ df = pd.read_csv(
             usecols=['sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5', 'label'])
 
 stringify = np.vectorize(lambda x: vocab_back[x])
-string_pred = [' '.join(stringify(p)) for pred_group in preds for p in pred_group]
-df['sentence5'] = string_pred
+string_pred = [stringify(p) for pred_group in preds for p in pred_group]
+df['sentence5'] = [' '.join(list(takewhile(lambda x: x != '.', p)) + ['.']) for p in string_pred]
 df['label'] = 0
 
 save_path = os.path.join(args.data_dir, 'train', 'seq2seq_endings.csv')

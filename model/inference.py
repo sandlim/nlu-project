@@ -30,7 +30,8 @@ def inference_sess(sess, model_spec, num_steps, writer=None, params=None):
     # compute metrics over the dataset
     batch_predictions = []
     for i in range(num_steps):
-        print('batch {}'.format(i))
+        if i%50 == 0:
+            print('batch {}'.format(i))
         batch_predictions.append(sess.run(predictions))
     return batch_predictions
 

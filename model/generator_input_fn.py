@@ -32,7 +32,7 @@ def process_text_line_dataset(dataset, mode, vocab, params):
                     separator=' ',
                     name=None), 0),
             'end':
-            tf.expand_dims(fields[4], 0)
+            tf.expand_dims(tf.string_join([params.bos_word, fields[4]], separator=' '), 0)
         }
         label = fields[-1]
         return features, label

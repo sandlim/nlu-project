@@ -1,6 +1,7 @@
 """Define the model."""
 
 import tensorflow as tf
+import numpy as np
 
 
 def build_model(mode, inputs, params):
@@ -49,11 +50,10 @@ def build_model(mode, inputs, params):
         outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder)
         logits = outputs.rnn_output
     else:
-        print(encoder_state)
         # Helper
         helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
             embeddings,
-            tf.fill([tf.shape(encoder_outputs)[0]], 0), 13)
+            tf.fill([tf.shape(encoder_outputs)[0]], 1), 14)
         # Decoder
         decoder = tf.contrib.seq2seq.BasicDecoder(
             lstm_cell_end, helper, encoder_state,
@@ -92,6 +92,16 @@ def model_fn(mode, inputs, params, reuse=False):
 
     if mode == 'infer':
         prediction = outputs.sample_id
+        
+        #def printer(s):
+        #    return tf.Print(s, [s], summarize=60)
+        #def stringify(p):
+        #    return tf.map_fn(lambda pp: tf.constant(params.vocab_back)[pp], p, dtype=tf.string)
+        #story_print = tf.map_fn(lambda p: printer(stringify(p)), inputs['story']['beg'][0], dtype=tf.string)
+        #pred_print = tf.map_fn(lambda p: printer(stringify(p)), prediction, dtype=tf.string)
+        #both_print = tf.map_fn(lambda p: printer(stringify(p)), tf.concat([inputs['story']['beg'][0], tf.cast(prediction, tf.int64)], axis=1), dtype=tf.string)
+        #with tf.control_dependencies([both_print]):
+        #    prediction = tf.identity(prediction)
     else:
         logits = outputs.rnn_output
         prediction = tf.argmax(logits, -1)

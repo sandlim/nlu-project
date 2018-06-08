@@ -9,14 +9,14 @@ import tensorflow as tf
 from model.utils import Params
 from model.utils import set_logger
 from model.training import train_and_evaluate
-from model.input_fn import input_fn
-from model.input_fn import load_dataset_from_csv
-from model.model_fn import model_fn
+from model.generator_input_fn import input_fn
+from model.generator_input_fn import load_dataset_from_csv
+from model.generator_model_fn import model_fn
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--model_dir',
-    default='experiments/base_model',
+    default='experiments/generator_pre-model',
     help="Directory containing params.json")
 parser.add_argument(
     '--data_dir',
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
     path_train_stories = os.path.join(args.data_dir, 'train/stories.csv')
-    path_wrong_endings = os.path.join(args.data_dir, 'train/seq2seq_endings.csv')
+    path_wrong_endings = os.path.join(args.data_dir, 'train/stories_generated.csv')
     path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories1.csv')
     path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories2.csv')
     path_val_stories_c = os.path.join(args.data_dir, 'val/stories1.csv')
@@ -93,36 +93,19 @@ if __name__ == '__main__':
     val_stories1 = load_dataset_from_csv(path_val_stories_c)
     val_stories2 = load_dataset_from_csv(path_val_stories_w)
 
-    generated = True
-    cheat = True
 
+    generated = False
     if generated:
         params.train_size += sum(1 for line in open(path_wrong_endings)) - 1
-    if cheat:
-        params.train_size += params.dev_size * 2
-    else:
-        params.eval_size += params.dev_size
+        train_stories = train_stories.concatenate(wrong_endings)
 
     # Specify other parameters for the dataset and the model
     params.buffer_size = params.train_size  # buffer size for shuffling
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
     # Create the iterators over the datasets
-    if generated:
-        train_stories = train_stories.concatenate(wrong_endings)
-    if cheat:
-        train_inputs = input_fn('train_including_dev',
-                                [train_stories, dev_stories1, dev_stories2],
-                                vocab, params)
-        val_inputs = input_fn(
-            'eval', [val_stories1, val_stories2],
-            vocab, params)
-    else:
-        train_inputs = input_fn('train', [train_stories], vocab, params)
-        val_inputs = input_fn('eval', [
-            val_stories1.concatenate(dev_stories1),
-            val_stories2.concatenate(dev_stories2)
-        ], vocab, params)
+    train_inputs = input_fn('pre-train',[train_stories], vocab, params)
+    val_inputs = input_fn('pre-eval', [val_stories1.concatenate(dev_stories1), val_stories2.concatenate(dev_stories2)], vocab, params)
     logging.info("- done.")
 
     # Define the models (2 different set of nodes that share weights for train and eval)
@@ -134,4 +117,5 @@ if __name__ == '__main__':
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(train_model_spec, eval_model_spec, args.model_dir, params, args.restore_dir)
+    train_and_evaluate(train_model_spec, eval_model_spec, args.model_dir,
+                       params, args.restore_dir)
