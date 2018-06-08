@@ -83,7 +83,7 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     logging.info("Starting inference")
-    pred = infer(model_spec, args.model_dir, params, args.restore_from)
+    preds = infer(model_spec, args.model_dir, params, args.restore_from)
 
     save_path = os.path.join(args.data_dir, 'test_nlu18', 'predictions.csv')
     print("Saving predictions in {}...".format(save_path))
@@ -91,8 +91,9 @@ if __name__ == '__main__':
         os.makedirs(os.path.dirname(save_path))
 
     with open(save_path, 'w') as f:
-        for p in pred:
-            f.write(str(p + 1) + '\n')
+        for pred in preds:
+            for p in pred:
+                f.write(str(p + 1) + '\n')
 
     # Export the dataset
     print("- done.")
