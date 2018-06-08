@@ -51,10 +51,10 @@ The training set of the story cloze test comes with only positive sample (i.e. s
 
 Shuffeling obviously changes the main character and main point of the story. Therefore, we find it sensible to generate endings that are wrong but still preserve the context. Negation of the fifth sentence seemed a promising way to achieve that end. i.e. The resulting sentence would be contain at least one of the charecters of the story. The resulting sentence would still be generally realisitic, except that it would not create a meaningful story as an continuation of the previous four sentences. 
 
-As a first approach we use a few handselected rules. The rules consist of pairs like good/bad and did/didn't. For each pair we replace some occurences of the first element with the second element and vice versa. A difficulty with this approach is that if one element of the pair occurs much more often then the other, the rare word would appear unreasonably often the wrong endings. 
+As a first approach we use a few handselected rules. The rules consist of pairs like good/bad and did/didn't. For each pair we replace occurences of the first element with the second element and vice versa. One caveat of this approach is the following scenario: if one elements of the pair occurs much more often then the other, the rare word would appear unreasonably often the wrong endings. For this reason we make sure that the ratio between the two elements of the pairs is the same in the correct and in the wrong endings.
 
 
-\subsubsection{Nltk antonyms}
+\subsubsection{Wordnet Antonyms}
 
 Negation can be challenging for complex sentence structures because we would have to decide which part of the sentence to negate. For example, for the sentence: "
 Kelly quickly went home." There are at least two possibilities of negation: "Kelly slowly went home" or "Kelly did not go home quickly". If we do not keep track the number of negations in the sentence, the result would be wrong: "Kelly did not slowly go home", which is not the negation of the original sentence. Hence, our approach, as shown in Figure \ref{Figure:wrong}, was to first negate the adjectives and adverbs, and in their absence, negate the verbs.
@@ -117,9 +117,11 @@ We adapted the neural machine translation tutorial on Tensorflow which made use 
 
 \section{Model: Classifier}
 
-Figure \ref{Figure:model} shows the architecture of our model. This is similar to the approach by Burgert et al. except for a few differences \cite{top4}. Our model involves two Long Short-Term Memory (LSTM) units to compute the feature representation of each sentence \citep{lstm}, instead of one Bidirectional Recurrent Neural Network (BiLSTM).
+Figure \ref{Figure:model} shows the architecture of our model. This is similar to the approach by Burgert et al. except for a few differences \cite{top4}. Our model involves two Long Short-Term Memory (LSTM) units to compute the feature representation of each sentence \citep{lstm}, instead of a Bidirectional Recurrent Neural Network (BiLSTM). We also use the last output of the LSTM instead of the last cell state.
 
-Firstly, we looked up the word embedding of each word in vector space for each sentence. The embeddings from the first four sentences were then passed on to the first LSTM which summarises the story in numbers. Likewise, the last sentence was passed on to the second LSTM. The results of two LSTMs are then concatenated as a string and passed on to a dense layer. The classifier trains on where the ending is relevant to the story or not.
+Firstly, we looked up the word embedding of each word in vector space for each sentence. The embeddings from the first four sentences were then passed on to the first LSTM which summarises the story in numbers. Likewise, the last sentence was passed on to the second LSTM. The results of two LSTMs are then concatenated and passed on to a dense layer. The output layer has two nodes, one for each verdict ("correct" or "wrong" ending).
+
+For the classification on the test and validation sets, the model then picks the one with the higher score for being the "correct" ending.
 
 \begin{figure}
   \centering
@@ -129,10 +131,10 @@ Firstly, we looked up the word embedding of each word in vector space for each s
 \end{figure}
 
 \section{Training}
-What is your objective? How do you optimize it?
+For the training, the model just learns to predict whether a ending is consistent or not. It doesn't directly learn to decide between two possible endings. We use the validation set in order to stop training before overfitting too much.
 
 \section{Experiments}
-This {\bf must} at least include the accuracy of your method on the validation set.
+For all experiments we use the same classifier, but different wrong endings. To evaluate the quality of our classifier, we do a experiment where we use 80\% of the validation set to train our classifier, and the remaining 20\% as validation set.
 
 \subsection{Results}
 \begin{table}[h]
@@ -144,6 +146,11 @@ This {\bf must} at least include the accuracy of your method on the validation s
     Shuffle & 50.3\% & 50.7\%\\
     Simple Antonyms & 54.4\% & 49.5\%\\
     Wordnet Antonyms & 56.4 & 55.6\\
+    Seq2Seq & 63.1 & 59.7\\
+    Wordnet \& Seq2Seq & 59.0 & 58.2\\
+    All generated & 56.9 & 56.0\\
+    Dev set \& Seq2Seq & 73.3 & 68.0\\
+    Dev set & 73.3 & 68.0\\
 
     \bottomrule
     \\
@@ -152,8 +159,11 @@ This {\bf must} at least include the accuracy of your method on the validation s
   \caption{System accuracies on the Story Cloze datasets. }
 \end{table}
 
+\subsection{Final Model for Predictions}
+
+As a final model we use the classifier trained on the seq2seq generated wrong endings and 80\% of the validation set. With this model we produced our submission for the nlu18-testset.
+
 \section{Conclusion}
-You can keep this short, too.
 
 
 
