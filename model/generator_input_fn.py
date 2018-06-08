@@ -24,23 +24,20 @@ def process_text_line_dataset(dataset, mode, vocab, params):
         fields = tf.decode_csv(
             line,
             ([tf.constant([""])] * (len(COLUMNS) - 1)) + [tf.constant([0])])
-        if params.concat_first_four == True:
-            features = {
-                'beg':
-                tf.expand_dims(
-                    tf.string_join(
-                        [fields[0], fields[1], fields[2], fields[3]],
-                        separator=' ',
-                        name=None), 0),
-                'end':
-                tf.expand_dims(fields[4], 0)
-            }
-        else:
-            features = dict(zip(COLUMNS[:-1], fields[:-1]))
+        features = {
+            'beg':
+            tf.expand_dims(
+                tf.string_join(
+                    [fields[0], fields[1], fields[2], fields[3]],
+                    separator=' ',
+                    name=None), 0),
+            'end':
+            tf.expand_dims(fields[4], 0)
+        }
         label = fields[-1]
         return features, label
 
-    if mode == 'eval':
+    if mode != 'infer':
         dataset = dataset.map(lambda l1, l2: (_parse_line(l1), _parse_line(l2)))
     else:
         dataset = dataset.map(_parse_line)
@@ -59,7 +56,7 @@ def process_text_line_dataset(dataset, mode, vocab, params):
     apply_split = lambda x1, x2: ({k: _split(s) for k, s in x1.items()}, x2)
     apply_vocabularize = lambda x1, x2: ({k: _vocabularize(s) for k, s in x1.items()}, x2)
 
-    if mode == 'eval':
+    if mode != 'infer':
         dataset = dataset.map(lambda l1, l2: (apply_split(*l1), apply_split(*l2)))
         dataset = dataset.map(lambda l1, l2: (apply_vocabularize(*l1), apply_vocabularize(*l2)))
     else:
@@ -86,15 +83,15 @@ def input_fn(mode, datasets, vocab, params):
 
     # Zip the sentence and the labels together
     dataset = datasets[0]
-    if mode == 'train_including_dev':
-        dataset = dataset.concatenate(datasets[1])  # first ending
-        dataset = dataset.concatenate(datasets[2])  # second ending
 
-    if mode == 'eval':
+    if mode != 'infer':
         dataset = tf.data.Dataset.zip((dataset, datasets[1]))
+        dataset = dataset.shuffle(buffer_size=buffer_size)
 
-    dataset = dataset.shuffle(buffer_size=buffer_size)
     dataset = process_text_line_dataset(dataset, mode, vocab, params)
+
+    if mode != 'infer':
+        dataset = dataset.map(lambda l1, l2: tf.cond(tf.squeeze(tf.equal(l1[1], tf.constant([0]))), lambda: l1, lambda: l2))
 
     # Create batches and pad the sentences of different length
     padded_shapes = (
@@ -107,9 +104,6 @@ def input_fn(mode, datasets, vocab, params):
                 tf.TensorShape([]))  # sequence_length
         },
         tf.TensorShape([]))  # label
-
-    if mode == 'eval':
-        padded_shapes = (padded_shapes, padded_shapes)
 
     dataset = (
         dataset.padded_batch(
@@ -124,16 +118,7 @@ def input_fn(mode, datasets, vocab, params):
     init_op = iterator.initializer
 
     # Build and return a dictionary containing the nodes / ops
-    if mode == 'eval':
-        ((story1, l1), (story2, l2)) = iterator.get_next()
-        inputs = {
-            'story1': story1,
-            'story2': story2,
-            'label': l2,
-            'iterator_init_op': init_op
-        }
-    else:
-        (story, label) = iterator.get_next()
-        inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}
+    (story, label) = iterator.get_next()
+    inputs = {'story': story, 'label': label, 'iterator_init_op': init_op}
 
     return inputs
