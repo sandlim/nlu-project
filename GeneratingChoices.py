@@ -2,9 +2,7 @@ import numpy as np
 import pandas as pd
 from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
-from random import randint
 import nltk.data
-from itertools import chain
 from nltk.stem.wordnet import WordNetLemmatizer
 
 def get_antonyms(input_lemma):
@@ -66,13 +64,15 @@ def negateSentence(sentence):
         output = output + " " + new_word
     return output
 
+#load the data
 train_dat = pd.read_csv('./data/train_stories.csv')
 
+#generate wrong sentences
 train_dat['wsentence5'] = train_dat['sentence5']
 for i in range(len(train_dat['wsentence5'])):
     train_dat['wsentence5'][i] = negateSentence(train_dat['sentence5'][i])
 
-
+#check the generated wrong sentences are all negated. Sometimes NLTK cannot identify verb correctly=> add not.
 train_dat['w2sentence5'] = train_dat['wsentence5']
 
 for i in range(len(train_dat['w2sentence5'])):
@@ -82,22 +82,30 @@ for i in range(len(train_dat['w2sentence5'])):
     else:
         train_dat['wsentence5'][i] == train_dat['wsentence5'][i]
 
+#create two choices: randomize s5 and w2s5
+choice = pd.DataFrame(columns=['RandomFifthSentenceQuiz1','RandomFifthSentenceQuiz2'])
 
-choice = pd.DataFrame(columns=['Option1','Option2'])
+choice["RandomFifthSentenceQuiz1"] = train_dat["sentence5"]
+choice["RandomFifthSentenceQuiz2"] = train_dat["w2sentence5"]
 
-choice["Option1"] = train_dat["sentence5"]
-choice["Option2"] = train_dat["w2sentence5"]
+np.random.seed(37)
 
 choice = choice.values
 #choice.shape (88161, 2)
+
 _ = [np.random.shuffle(i) for i in choice]
 
 choice = pd.DataFrame(choice,
-                      columns=['Option1','Option2'])
+                      columns=['RandomFifthSentenceQuiz1','RandomFifthSentenceQuiz2'])
 
-train_dat["Option1"] = choice["Option1"]
-train_dat["Option2"] = choice["Option2"]
+train_dat["RandomFifthSentenceQuiz1"] = choice["RandomFifthSentenceQuiz1"]
+train_dat["RandomFifthSentenceQuiz2"] = choice["RandomFifthSentenceQuiz2"]
 
-train_dat["Correct"] = np.where(train_dat['Option1']==train_dat['sentence5'], '1', '2')
+train_dat["AnswerRightEnding"] = np.where(train_dat['RandomFifthSentenceQuiz1']==train_dat['sentence5'], '1', '2')
 
-train_dat.to_csv("./data/train_dat_wrongchoice.csv", sep=',', encoding='utf-8',index = False)
+
+del train_dat['sentence5']
+del train_dat['wsentence5']
+del train_dat['w2sentence5']
+
+train_dat.to_csv("./data/wrong_ending_generation_nltk.csv", sep=',', encoding='utf-8',index = False)
