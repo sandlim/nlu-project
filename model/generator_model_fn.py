@@ -1,6 +1,7 @@
 """Define the model."""
 
 import tensorflow as tf
+import numpy as np
 
 
 def build_model(mode, inputs, params):
@@ -51,8 +52,8 @@ def build_model(mode, inputs, params):
     else:
         # Helper
         helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(
-            tf.transpose(embeddings),
-            tf.fill([tf.shape(encoder_outputs)[0]], 0), 14)
+            embeddings,
+            tf.fill([tf.shape(encoder_outputs)[0]], 1), 14)
         # Decoder
         decoder = tf.contrib.seq2seq.BasicDecoder(
             lstm_cell_end, helper, encoder_state,
@@ -91,6 +92,16 @@ def model_fn(mode, inputs, params, reuse=False):
 
     if mode == 'infer':
         prediction = outputs.sample_id
+        
+        #def printer(s):
+        #    return tf.Print(s, [s], summarize=60)
+        #def stringify(p):
+        #    return tf.map_fn(lambda pp: tf.constant(params.vocab_back)[pp], p, dtype=tf.string)
+        #story_print = tf.map_fn(lambda p: printer(stringify(p)), inputs['story']['beg'][0], dtype=tf.string)
+        #pred_print = tf.map_fn(lambda p: printer(stringify(p)), prediction, dtype=tf.string)
+        #both_print = tf.map_fn(lambda p: printer(stringify(p)), tf.concat([inputs['story']['beg'][0], tf.cast(prediction, tf.int64)], axis=1), dtype=tf.string)
+        #with tf.control_dependencies([both_print]):
+        #    prediction = tf.identity(prediction)
     else:
         logits = outputs.rnn_output
         prediction = tf.argmax(logits, -1)
@@ -106,7 +117,7 @@ def model_fn(mode, inputs, params, reuse=False):
         losses = tf.boolean_mask(raw_loss, mask)
         loss = tf.reduce_mean(losses)
         perplexity = tf.exp(loss)
-        accuracy = tf.reduce_mean(tf.cast(tf.equal(label, prediction), tf.float32))
+        accuracy = tf.reduce_mean(tf.boolean_mask(tf.cast(tf.equal(label, prediction), tf.float32), mask))
 
         # Define training step that minimizes the loss with the Adam optimizer
         if is_training:
@@ -124,7 +135,7 @@ def model_fn(mode, inputs, params, reuse=False):
         with tf.variable_scope("metrics"):
             metrics = {
                 'accuracy':
-                tf.metrics.accuracy(labels=label, predictions=prediction),
+                tf.metrics.mean(accuracy),
                 'perplexity':
                 tf.metrics.mean(tf.exp(loss)),
                 'loss':

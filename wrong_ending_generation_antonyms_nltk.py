@@ -1,9 +1,16 @@
-import numpy as np
 import pandas as pd
+import nltk
 from nltk.corpus import wordnet as wn
 from nltk.tokenize import word_tokenize
 import nltk.data
 from nltk.stem.wordnet import WordNetLemmatizer
+
+from build_dataset import tokenize
+
+
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
 
 
 def get_antonyms(input_lemma):
@@ -91,4 +98,5 @@ del train_dat['w2sentence5']
 del train_dat['wsentence5']
 train_dat['label'] = 0
 
-train_dat.to_csv("./data/wrong_endings_nltk.csv", sep=',', encoding='utf-8', index=False)
+train_dat = tokenize(train_dat)
+train_dat.to_csv("./data/dev_split/train/antonym_endings_nltk.csv", sep=',', encoding='utf-8', index=False)

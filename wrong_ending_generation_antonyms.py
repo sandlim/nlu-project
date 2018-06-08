@@ -1,33 +1,14 @@
 import pandas as pd
-import argparse
 import re
 import random
 from collections import Counter
-import os
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--generation_method',
-    default='shuffle',
-    help="method used to generate wrong endings (shuffle, antonyms, both)")
-
+from build_dataset import save_dataset, tokenize
 
 def load_data(path, is_validation=False):
     df = pd.read_csv(path, usecols=[
                          'sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5'
                      ])
     return df
-
-
-def save_dataset(dataset, save_path):
-    # Create directory if it doesn't exist
-    print("Saving in {}...".format(save_path))
-    if not os.path.exists(os.path.dirname(save_path)):
-        os.makedirs(os.path.dirname(save_path))
-
-    # Export the dataset
-    dataset.to_csv(save_path, index=False)
-    print("- done.")
 
 
 def generate_endings_using_antomyms(df):
@@ -113,30 +94,13 @@ def generate_endings_using_antomyms(df):
     return stories_w
 
 
-def generate_endings_shuffle(df: pd.DataFrame):
-    df_new = df.copy()
-    indices = list(range(len(df)))
-    while any([e == i for e, i in enumerate(indices)]):
-        random.shuffle(indices)
-    for i, ind in enumerate(indices):
-        df_new.iloc[i]['sentence5'] = df.iloc[ind]['sentence5']
-    df_new['label'] = 0
-    return df_new
-
-
 def main():
+    random.seed(42)
     train_path = './data/train_stories.csv'
     df_train = load_data(train_path)
-    args = parser.parse_args()
-    if args.generation_method == 'antonyms':
-        df = generate_endings_using_antomyms(df_train)
-    if args.generation_method == 'shuffle':
-        df = generate_endings_shuffle(df_train)
-    if args.generation_method == 'both':
-        df1 = generate_endings_using_antomyms(df_train)
-        df2 = generate_endings_shuffle(df_train)
-        df = df1.append(df2)
-    save_dataset(df, './data/wrong_endings.csv')
+    df = generate_endings_using_antomyms(df_train)
+    df = tokenize(df)
+    save_dataset(df, './data/dev_split/train/antonym_endings_simple.csv')
 
 
 if __name__ == "__main__":

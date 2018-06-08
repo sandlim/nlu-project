@@ -113,19 +113,18 @@ def tokenize(ds):
 
 if __name__ == "__main__":
     nltk.download('punkt')
+    np.random.seed(14)
 
     # Check that the dataset exists
     path_dataset = 'data/train_stories.csv'
     path_dataset_val = 'data/cloze_test_val.csv'
     path_dataset_test = 'data/cloze_test_spring2016-test.csv'
     path_dataset_test_nlu18 = 'data/test_nlu18.csv'
-    path_dataset_generated = 'data/wrong_endings.csv'
     msg = "{} file not found. Make sure you have downloaded the right dataset".format(
         path_dataset)
     assert os.path.isfile(path_dataset), msg
     assert os.path.isfile(path_dataset_val), msg
     assert os.path.isfile(path_dataset_test), msg
-    assert os.path.isfile(path_dataset_generated), msg
 
     # Load the dataset into memory
     print("Loading dataset into memory (and rearranging it)...")
@@ -140,8 +139,6 @@ if __name__ == "__main__":
     dataset_test_nlu18_1, dataset_test_nlu18_2 = load_dataset(
         path_dataset_test, is_test=True)
     print("- loaded (and rearranged) test_nlu18 set.")
-    dataset_generated = load_dataset(path_dataset_generated, generated=True)
-    print("- loaded generated stories.")
     print("- done.")
 
     # Tokenization
@@ -157,8 +154,6 @@ if __name__ == "__main__":
     print("- tokenized test_nlu18 set.")
     train_dataset = tokenize(train_dataset)
     print("- tokenized training set.")
-    dataset_generated = tokenize(dataset_generated)
-    print("- tokenized generated set.")
 
     print("- done.")
 
@@ -174,9 +169,6 @@ if __name__ == "__main__":
     # Save the datasets to files
     save_dataset(train_dataset,
                  os.path.join('data', 'dev_split', 'train', 'stories.csv'))
-    save_dataset(
-        dataset_generated,
-        os.path.join('data', 'dev_split', 'train', 'stories_generated.csv'))
     save_dataset(dev_split_dataset1,
                  os.path.join('data', 'dev_split', 'dev', 'stories1.csv'))
     save_dataset(dev_split_dataset2,
