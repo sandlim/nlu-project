@@ -3,6 +3,9 @@
 import logging
 import os
 
+import numpy as np
+import pandas as pd
+
 from tqdm import trange
 import tensorflow as tf
 
@@ -58,6 +61,4 @@ def infer(model_spec, model_dir, params, restore_from):
         num_steps = (params.eval_size + params.batch_size - 1) // params.batch_size
         batch_pred = inference_sess(sess, model_spec, num_steps)
 
-        #TODO
-        save_path = os.path.join(model_dir, "metrics_test_{}.json".format(metrics_name))
-        save_dict_to_json(metrics, save_path)
+    np.concatenate(batch_pred)

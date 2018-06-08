@@ -66,10 +66,10 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    val_stories1 = load_dataset_from_csv(path_val_stories1, vocab, params)
-    val_stories2 = load_dataset_from_csv(path_val_stories1, vocab, params)
-    test_stories1 = load_dataset_from_csv(path_test_stories1, vocab, params)
-    test_stories2 = load_dataset_from_csv(path_test_stories2, vocab, params)
+    val_stories1 = load_dataset_from_csv(path_val_stories1)
+    val_stories2 = load_dataset_from_csv(path_val_stories1)
+    test_stories1 = load_dataset_from_csv(path_test_stories1)
+    test_stories2 = load_dataset_from_csv(path_test_stories2)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.test_size
@@ -79,10 +79,10 @@ if __name__ == '__main__':
     if use_val:
         params.eval_size = params.val_size
         # Create iterator over the test set
-        inputs = input_fn('eval', [val_stories1, val_stories2], params)
+        inputs = input_fn('eval', [val_stories1, val_stories2], vocab, params)
     else:
         # Create iterator over the test set
-        inputs = input_fn('eval', [test_stories1, test_stories2], params)
+        inputs = input_fn('eval', [test_stories1, test_stories2], vocab, params)
 
 logging.info("- done.")
 

@@ -24,19 +24,16 @@ def process_text_line_dataset(dataset, mode, vocab, params):
         fields = tf.decode_csv(
             line,
             ([tf.constant([""])] * (len(COLUMNS) - 1)) + [tf.constant([0])])
-        if params.concat_first_four == True:
-            features = {
-                'beg':
-                tf.expand_dims(
-                    tf.string_join(
-                        [fields[0], fields[1], fields[2], fields[3]],
-                        separator=' ',
-                        name=None), 0),
-                'end':
-                tf.expand_dims(fields[4], 0)
-            }
-        else:
-            features = dict(zip(COLUMNS[:-1], fields[:-1]))
+        features = {
+            'beg':
+            tf.expand_dims(
+                tf.string_join(
+                    [fields[0], fields[1], fields[2], fields[3]],
+                    separator=' ',
+                    name=None), 0),
+            'end':
+            tf.expand_dims(fields[4], 0)
+        }
         label = fields[-1]
         return features, label
 

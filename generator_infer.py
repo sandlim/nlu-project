@@ -5,6 +5,7 @@ import logging
 import os
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from model.utils import Params
@@ -61,15 +62,17 @@ if __name__ == '__main__':
     vocab = tf.contrib.lookup.index_table_from_file(
         path_vocab, num_oov_buckets=num_oov_buckets)
 
+    vocab_back = open(path_vocab, 'r').read().splitlines()
+
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    train_stories = load_dataset_from_csv(path_train_stories, vocab, params)
+    train_stories = load_dataset_from_csv(path_train_stories)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.train_size
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
-    inputs = input_fn('infer', [train_stories], params)
+    inputs = input_fn('infer', [train_stories], vocab, params)
 
 logging.info("- done.")
 
@@ -78,5 +81,22 @@ logging.info("Creating the model...")
 model_spec = model_fn('infer', inputs, params)
 logging.info("- done.")
 
-logging.info("Starting evaluation")
-infer(model_spec, args.model_dir, params, args.restore_from)
+logging.info("Starting inference")
+pred = infer(model_spec, args.model_dir, params, args.restore_from)
+df = pd.read_csv(
+            path_train_stories,
+            usecols=['sentence1', 'sentence2', 'sentence3', 'sentence4', 'sentence5', 'label'])
+
+stringify = np.vectorize(lambda x: vocab_back[x])
+string_pred = stringify(pred)
+df['sentence5'] = [' '.join(p) for p in string_pred]
+df['label'] = 0
+
+save_path = os.path.join(args.data_dir, 'train', 'seq2seq_endings.csv')
+print("Saving predictions in {}...".format(save_path))
+if not os.path.exists(os.path.dirname(save_path)):
+    os.makedirs(os.path.dirname(save_path))
+
+# Export the dataset
+df.to_csv(save_path, index=False)
+print("- done.")
