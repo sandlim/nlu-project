@@ -5,11 +5,12 @@ import logging
 import os
 
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from model.utils import Params
 from model.utils import set_logger
-from model.evaluation import evaluate
+from model.inference import infer
 from model.input_fn import input_fn
 from model.input_fn import load_dataset_from_csv
 from model.model_fn import model_fn
@@ -17,7 +18,7 @@ from model.model_fn import model_fn
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--model_dir',
-    default='experiments/base_model',
+    default='experiments/generator_model',
     help="Directory containing params.json")
 parser.add_argument(
     '--data_dir',
@@ -52,44 +53,46 @@ if __name__ == '__main__':
     gpu_options = tf.GPUOptions(allow_growth=True)
     params.sessConfig = tf.ConfigProto(gpu_options=gpu_options)
     params.data_dir = args.data_dir
+    params.eval_size = params.test_nlu18_size
 
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
-    path_val_stories1 = os.path.join(args.data_dir, 'val/stories1.csv')
-    path_val_stories2 = os.path.join(args.data_dir, 'val/stories2.csv')
-    path_test_stories1 = os.path.join(args.data_dir, 'test/stories1.csv')
-    path_test_stories2 = os.path.join(args.data_dir, 'test/stories2.csv')
+    path_test_stories = os.path.join(args.data_dir, 'test_nlu18/stories.csv')
 
     # Load Vocabularies
     vocab = tf.contrib.lookup.index_table_from_file(
         path_vocab, num_oov_buckets=num_oov_buckets)
 
+    vocab_back = open(path_vocab, 'r').read().splitlines()
+
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    val_stories1 = load_dataset_from_csv(path_val_stories1)
-    val_stories2 = load_dataset_from_csv(path_val_stories1)
-    test_stories1 = load_dataset_from_csv(path_test_stories1)
-    test_stories2 = load_dataset_from_csv(path_test_stories2)
+    test_stories = load_dataset_from_csv(path_test_stories)
 
     # Specify other parameters for the dataset and the model
-    params.eval_size = params.test_size
+    params.eval_size = params.test_nlu18_size
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
-    use_val = False
-    if use_val:
-        params.eval_size = params.val_size
-        # Create iterator over the test set
-        inputs = input_fn('eval', [val_stories1, val_stories2], vocab, params)
-    else:
-        # Create iterator over the test set
-        inputs = input_fn('eval', [test_stories1, test_stories2], vocab, params)
+    inputs = input_fn('eval', [test_stories], vocab, params)
 
-logging.info("- done.")
+    logging.info("- done.")
 
-# Define the model
-logging.info("Creating the model...")
-model_spec = model_fn('eval', inputs, params)
-logging.info("- done.")
+    # Define the model
+    logging.info("Creating the model...")
+    model_spec = model_fn('eval', inputs, params)
+    logging.info("- done.")
 
-logging.info("Starting evaluation")
-evaluate(model_spec, args.model_dir, params, args.restore_from)
+    logging.info("Starting inference")
+    pred = infer(model_spec, args.model_dir, params, args.restore_from)
+
+    save_path = os.path.join(args.data_dir, 'test_nlu18', 'predictions.csv')
+    print("Saving predictions in {}...".format(save_path))
+    if not os.path.exists(os.path.dirname(save_path)):
+        os.makedirs(os.path.dirname(save_path))
+
+    with open(save_path, 'w') as f:
+        for p in pred:
+            f.write(str(p + 1) + '\n')
+
+    # Export the dataset
+    print("- done.")

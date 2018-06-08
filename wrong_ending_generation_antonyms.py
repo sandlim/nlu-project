@@ -34,27 +34,26 @@ def generate_endings_using_antomyms(df):
     word_counts = Counter()
     antonyms = dict([
         # ("day", "night"),
-        ("was", "wasn't"),
-        ("will", "won't"),
-        ("did", "didn't"),
-        ("could", "couldn't"),
-        ("home", "abroad"),
-        ("would", "wouldn't"),
-        ("friends", "enemies"),
-        ("friend", "enemy"),
-        ("with", "without"),
-        ("bought", "sold"),
+        # ("was", "wasn't"),
+        # ("will", "won't"),
+        # ("did", "didn't"),
+        # ("could", "couldn't"),
+        # ("would", "wouldn't"),
+        # ("friends", "enemies"),
+        # ("friend", "enemy"),
+        # ("with", "without"),
+        # ("bought", "sold"),
         ("loved", "hated"),
-        ("started", "ended"),
-        ("first",  "last"),
+        # ("started", "ended"),
+        # ("first",  "last"),
         ("good", "bad"),
-        ("always", "never"),
+        # ("always", "never"),
         ("happy", "sad"),
         ("great", "awful"),
-        ("party", "funeral"),
-        ("something", "nothing"),
-        ("most", "least"),
-        ("nervous", "calm")
+        # ("party", "funeral"),
+        # ("something", "nothing"),
+        # ("most", "least"),
+        # ("nervous", "calm")
     ])
     invertible_words = set(antonyms.keys()) | set(antonyms.values())
     occurences = dict([(word, []) for word in invertible_words])
