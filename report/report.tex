@@ -36,16 +36,16 @@
 %\begin{abstract}
 %\end{abstract}
 
-Feel free to add more sections but those listed here are strongly recommended.
 \section{Introduction}
-You can keep this short. Ideally you introduce the task already in a way that highlights the difficulties  your method will tackle.
+
+The training set of the story cloze test comes with only positive sample (i.e. stories with correct endings). On the other hand, the test set requires a classification as correct/wrong endings. This is one of the main difficulties with the story cloze test. We decided to generate wrong endings and to train a RNN-based classifier, using the correct endings from the training set and our own generated wrong endings. We explore several methods for the generation of wrong endings, which we will explain in section 2.
 
 \section{Methodology}
 \subsection{Generating wrong endings with WordNet}
-Wrong endings were generated for each story to better train our classifier. Naive way would be to randomize the correct endings of each story. However, doing so would obviously change the main charecter or main point of the story. Therefore, we needed to generate endings that are wrong but still preserves narrative structure. Negation of the fifth sentence was a promising way to achieve that end. i.e. The resulting sentence would be contain at least one of the charecters of the story. The resulting sentence would still be generally realisitic, except that it would not create a meaningful story as an addition to the previous four sentences.
+Suffeling obviously changes the main character and main point of the story. Therefore, we find it sensible to generate endings that are wrong but still preserve narrative structure. Negation of the fifth sentence was a promising way to achieve that end. i.e. The resulting sentence would be contain at least one of the charecters of the story. The resulting sentence would still be generally realisitic, except that it would not create a meaningful story as an addition to the previous four sentences.
 
 
-Negation can be challenging for complex sentence structures because we would have to decide which part of the sentence to negate. For example, the sentence: "
+Negation can be challenging for complex sentence structures because we would have to decide which part of the sentence to negate. For example, for the sentence: "
 Kelly quickly went home." There are two possibilities of negation: "Kelly slowly went home" or "Kelly did not quickly go home". If we do not keep track the number of negations in the sentence, the result would be wrong: "Kelly did not slowly go home", which is not the negation of the original sentence. Hence, our approach, as shown in  Figure \ref{Figure:wrong}, was to first negate the adjectives and adverbs, and in their absence, negate the verbs, all the while keeping count of number of negations in the generated sentence.
 
 \begin{figure}
@@ -126,17 +126,16 @@ This {\bf must} at least include the accuracy of your method on the validation s
 \subsection{Results}
 \begin{table}[h]
   \centering
-  \begin{tabular}{ c c c c}
+  \begin{tabular}{ c c c}
     \toprule
-    Approach &  \multicolumn{2}{c}{Validation} & Test \\
-     &  Dev & Full &  \\
+    Approach & Validation & Test \\
     \midrule
-    Happy & 0.616 & 0.590& 0.602\\
-    Happy & 0.616 & 0.590& 0.602\\
-    Happy & 0.616 & 0.590& 0.602\\
-    Happy & 0.616 & 0.590& 0.602\\
+    Shuffle & 50.1\% & 50.7\%\\
+    Simple Antonyms & 0.616 & 0.602\\
+    Shuffle & 0.616 & 0.602\\
 
     \bottomrule
+    \\
   \end{tabular}
   \label{Tab:results}
   \caption{System accuracies on the Story Cloze datasets. }
