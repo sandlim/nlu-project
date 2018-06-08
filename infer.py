@@ -18,7 +18,7 @@ from model.model_fn import model_fn
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--model_dir',
-    default='experiments/generator_model',
+    default='experiments/base_model',
     help="Directory containing params.json")
 parser.add_argument(
     '--data_dir',
@@ -57,7 +57,8 @@ if __name__ == '__main__':
 
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
-    path_test_stories = os.path.join(args.data_dir, 'test_nlu18/stories.csv')
+    path_test_stories1 = os.path.join(args.data_dir, 'test_nlu18/stories1.csv')
+    path_test_stories2 = os.path.join(args.data_dir, 'test_nlu18/stories2.csv')
 
     # Load Vocabularies
     vocab = tf.contrib.lookup.index_table_from_file(
@@ -67,13 +68,14 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the dataset...")
-    test_stories = load_dataset_from_csv(path_test_stories)
+    test_stories1 = load_dataset_from_csv(path_test_stories1)
+    test_stories2 = load_dataset_from_csv(path_test_stories2)
 
     # Specify other parameters for the dataset and the model
     params.eval_size = params.test_nlu18_size
     params.id_pad_word = vocab.lookup(tf.constant(params.pad_word))
 
-    inputs = input_fn('eval', [test_stories], vocab, params)
+    inputs = input_fn('eval', [test_stories1, test_stories2], vocab, params)
 
     logging.info("- done.")
 
@@ -83,7 +85,7 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     logging.info("Starting inference")
-    pred = infer(model_spec, args.model_dir, params, args.restore_from)
+    preds = infer(model_spec, args.model_dir, params, args.restore_from)
 
     save_path = os.path.join(args.data_dir, 'test_nlu18', 'predictions.csv')
     print("Saving predictions in {}...".format(save_path))
@@ -91,8 +93,9 @@ if __name__ == '__main__':
         os.makedirs(os.path.dirname(save_path))
 
     with open(save_path, 'w') as f:
-        for p in pred:
-            f.write(str(p + 1) + '\n')
+        for pred in preds:
+            for p in pred:
+                f.write(str(p + 1) + '\n')
 
     # Export the dataset
     print("- done.")

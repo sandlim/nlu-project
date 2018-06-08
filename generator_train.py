@@ -73,7 +73,6 @@ if __name__ == '__main__':
 
     # Get paths for vocabularies and dataset
     path_vocab = os.path.join(args.data_dir, 'vocab.txt')
-    path_wrong_endings = os.path.join(args.data_dir, 'train/stories_generated.csv')
     path_dev_stories_c = os.path.join(args.data_dir, 'dev/stories1.csv')
     path_dev_stories_w = os.path.join(args.data_dir, 'dev/stories2.csv')
     path_val_stories_c = os.path.join(args.data_dir, 'val/stories1.csv')
@@ -85,7 +84,6 @@ if __name__ == '__main__':
 
     # Create the input data pipeline
     logging.info("Creating the datasets...")
-    wrong_endings = load_dataset_from_csv(path_wrong_endings)
     dev_stories1 = load_dataset_from_csv(path_dev_stories_c)
     dev_stories2 = load_dataset_from_csv(path_dev_stories_w)
     val_stories1 = load_dataset_from_csv(path_val_stories_c)
