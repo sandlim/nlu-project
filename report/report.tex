@@ -22,10 +22,10 @@
 
 
 % Choose a title for your submission
-\title{Your title here}
+\title{Tackling Story Cloze Test with Wrong Ending Generation}
 
 
-\author{Student 1 \qquad Student 2 \qquad Sandar Felicity Lim}
+\author{Pascal Wiesmann \qquad Stefano Woerner \qquad Sandar Felicity Lim}
 %\graphicspath{{fig/}}
 \begin{document}
 % \nipsfinalcopy is no longer used
@@ -41,7 +41,7 @@ Feel free to add more sections but those listed here are strongly recommended.
 You can keep this short. Ideally you introduce the task already in a way that highlights the difficulties  your method will tackle.
 
 \section{Methodology}
-\subsection{Generating wrong endings}
+\subsection{Generating wrong endings with WordNet}
 Wrong endings were generated for each story to better train our classifier. Naive way would be to randomize the correct endings of each story. However, doing so would obviously change the main charecter or main point of the story. Therefore, we needed to generate endings that are wrong but still preserves narrative structure. Negation of the fifth sentence was a promising way to achieve that end. i.e. The resulting sentence would be contain at least one of the charecters of the story. The resulting sentence would still be generally realisitic, except that it would not create a meaningful story as an addition to the previous four sentences.
 
 
@@ -97,12 +97,18 @@ There are two main limitations of our model to generate wrong endings. First, is
 
 Second is that our generated wrong endings may have high occurance of the word "not" as our model was designed to insert "not" in the absence of antonyms. This would affect our classifier performance negatively.
 
-\subsection{LSTM}
+\subsection{Generating wrong endings with seq2seq}
+We adapted the neural machine translation tutorial on Tensorflow which made use of seq2seq models \cite{tfseq2seq}. Sequence2sequence model consists of two RNNs: encoder and decoder, which reads the  input sequence to infer semantic summary and generates output sequence respectively. Our method starts with training the model on true endings of the train dataset. Then we did a post-training on 80\% of the wrong endings of validation set. We included validation set in our training model because doing so further impoves the ability of our model to generate wrong endings.
 
 
-\section{Model}
+\subsubsection{Limitations}
 
-Figure \ref{Figure:model} shows the architecture of our model. This is similar to the approach by Burgert et al. except for a few differences \cite{top4}. Our model involves two Long Short-Term Memory (LSTM) units to compute the feature representation of each sentence \citep{lstm}.
+
+\section{Model: Classifier}
+
+Figure \ref{Figure:model} shows the architecture of our model. This is similar to the approach by Burgert et al. except for a few differences \cite{top4}. Our model involves two Long Short-Term Memory (LSTM) units to compute the feature representation of each sentence \citep{lstm}, instead of one Bidirectional Recurrent Neural Network (BiLSTM).
+
+Firstly, we looked up the word embedding of each word in vector space for each sentence. The embeddings from the first four sentences were then passed on to the first LSTM which summarises the story in numbers. Likewise, the last sentence was passed on to the second LSTM. The results of two LSTMs are then concatenated as a string and passed on to a dense layer. The classifier trains on where the ending is relevant to the story or not.
 
 \begin{figure}
   \centering
@@ -138,3 +144,10 @@ This {\bf must} at least include the accuracy of your method on the validation s
 
 \section{Conclusion}
 You can keep this short, too.
+
+
+
+\bibliographystyle{unsrt}
+\bibliography{resources.bib}
+
+\end{document}
