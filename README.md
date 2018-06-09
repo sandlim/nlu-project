@@ -7,14 +7,10 @@ virtualenv needs to be available.
 ./setup.sh
 ```
 
-## Generate our final model:
+## Preparation
 First generate wrong endings as follows:
 ```
 python wrong_endings_generation_<generation-method>.py
-```
-wrong_ending_generation_antonyms.py
-wrong_ending_generation_antonyms_nltk.py
-wrong_ending_generation_shuffle.py
 ```
 
 Then:
